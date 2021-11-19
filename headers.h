@@ -2,30 +2,28 @@
 #include <stdlib.h>
 #include <string.h>
 
-/*
-struct symbols {
-	int	DefinedOnSourceLine;
-	int	Address;
-	char	Name[7]; };
-*/
-
 #ifndef HEADERS
 #define HEADERS
-struct symbol{
+
+struct symbol {
 	int address;
 	int sourceLine;
 	char name[7];
 };
+
 struct syminst{
     char iname[5];
     int opcode;
 };
+
 struct countertrack{
     int line;
     unsigned int counter;
 };
+
 int matchDirective(char* name);
 int checkspecial(char* symbol);
 int symbolExists(struct symbol* tab[], char *sname);
-int IsAValidSymbol( char *TestSymbol, struct symbol* tab[] );
+int IsAValidSymbol(char *TestSymbol, struct symbol* tab[]);
+
 #endif

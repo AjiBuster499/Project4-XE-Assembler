@@ -30,7 +30,6 @@ int main( int argc, char* argv[]) {
     pcount[e] = malloc(sizeof(struct countertrack));
   }
   
-  //memset(pcount, '\0', 1024 * sizeof(struct countertrack*));
   memset(symTab, '\0', 1024 * sizeof(struct symbol*));
 	FILE *fp;
 	char line[1024];
@@ -70,7 +69,6 @@ int main( int argc, char* argv[]) {
 		//good manners to close your file with fclose
 		//read line by line until the end of the file
 		if (line[0] == 35) {
-      //printf("COMMENT:%s", line);
       linecount++;
       continue;
     }
@@ -82,7 +80,6 @@ int main( int argc, char* argv[]) {
     }
 		if( (line[0] >= 65) && ( line[0]<= 90 )) { // this lets us know the line is between A and capital Z.
       newsym = strtok( line, " \t\n\r");
-      //printf("NEW SYMBOL ON LINE: %s\n", line);
       newdir = strtok( NULL, " \t\n\r");
       tok3 = strtok( NULL, "\t\n");
       casenum = IsAValidSymbol(newsym, symTab);
@@ -114,7 +111,7 @@ int main( int argc, char* argv[]) {
       }
       if (strcmp( "START", newdir) == 0) {
         sscanf(tok3, "%x", start);
-        //printf("%x %d", *start, *start);
+
         if((*start >= 0x8000)) {
           printLine(lclone);
           printf("Line %d ERROR: RAM starts at an amount equal to or greater than SIC memory! \n", linecount);
@@ -137,8 +134,6 @@ int main( int argc, char* argv[]) {
         fclose(fp);
         return 0;
       }
-      //printf("New instruction at %s\n", newdir);
-      //printf("%X %d\n", *start, *start);
 
     } else if((line[0] == '\t') || line[0] == ' ' ) {
       newsym = strtok( line, " \t\n\r");
@@ -148,10 +143,8 @@ int main( int argc, char* argv[]) {
        sscanf(tok3, "%x", start);
         pcount[linecount]->line = linecount;
         pcount[linecount]->counter = *start;
-        //printf("%x %d", *start, *start);
       }
 
-      //printf("New instruction at %s\n", newsym);
       pcount[linecount]->line = linecount;
       pcount[linecount]->counter = *start;
       prev = *start;
@@ -198,13 +191,11 @@ int main( int argc, char* argv[]) {
   while(fgets(line, 1024, fp) != NULL) {
     arrayCopy(line, lclone);
     if (line[0] == 35) {
-      //printf("COMMENT:%s", line);
       linecount2++;
       continue;
     }
     if ((line[0] >= 65) && (line[0] <= 90)) { // capital A-Z
       newsym = strtok(line, " \t\n\r");
-      //printf("NEW SYMBOL ON LINE: %s\n", line);
       newdir = strtok(NULL, " \t\n\r");
       tok3 = strtok(NULL, "\t\n");
       
@@ -277,23 +268,6 @@ int main( int argc, char* argv[]) {
   printTable(symTab);
   sprintf(header, "H%s\t00%04X%07X", init.name, init.address, prglen);
 
-  /**
-  while(index <= (trcount - 1))
-  {
-      printf("%s\n", trecord[index]);
-      index++;
-  }
-  index = 1;
-  while(index <= mrcount)
-  {
-      printf("%s\n", mrecord[index]);
-      index++;
-  }
-
-  printf("%s\n", header);
-  printf("%s", trecord[0]);
-  */
-
   fclose(fp);
   strcat(argv[1], ".obj");
   fopen(argv[1], "w");
@@ -306,7 +280,7 @@ int main( int argc, char* argv[]) {
 }
 
 // busywork to set up the opcode table.
-// condensed line for readability
+// condensed lines for space
 void initInstructions(struct syminst tab[]) {
   strcpy(tab[0].iname, "ADD");tab[0].opcode = 0x18;
   strcpy(tab[1].iname, "AND");tab[1].opcode = 0x40;
@@ -339,16 +313,6 @@ void initInstructions(struct syminst tab[]) {
 int instructionExists(struct syminst insttab[], char *sname) {
   int result = 0;
   int index = 0;
-  /*while(insttab[index] != NULL)
-  {
-      if( strcmp(sname, insttab[index]->iname) == 0)
-      {
-          result = -1;
-          break;
-      }
-      index++;
-  }
-  */
   for (index = 0; index < INST_MAX; index ++) {
     if (strcmp(sname, insttab[index].iname) == 0) {
       result = -1;
@@ -436,7 +400,6 @@ int addCtr(struct syminst tab[], char* symbol, char* tok3, unsigned int* ctr, ch
       return 0;
     }
   } else if (strcmp("WORD", symbol) == 0) {
-    //sscanf(tok3, "%d", &hextemp);
     temp = strtol(tok3, NULL, 10);
     if ((*ctr +(3) <= 0x8000) &&
        ((temp <= 8388608) && (temp >= -8388608))) {
@@ -560,15 +523,13 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
       rem = bytelen % 30;
       memused = 0;
 
-      for(int x = 1; x <= looplen; x++) {
-        
+      for(int x = 1; x <= looplen; x++) { 
         if(x == looplen &&
            rem != 0) {
           memused = rem;
         } else {
           memused = 30;
         }
-
         sprintf(finalstring, "T00%04X%02X", locctr, memused);
         
         if(memused < 3) {
@@ -592,8 +553,6 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
         locctr +=30;
         counter = 0;
       }
-
-      //int length = strlen(tempstring);
       return 1;
     }
   }
@@ -729,36 +688,3 @@ int createFile(FILE* fp, char trec[][71], char mrec[][71], char* header, char* e
   fprintf(fp, "%s", end);
   return 0;
 }
-/*
-void addSymbol(struct symbol* tab[], int addr, int src, char* sName)
-{
-	int index = 0;
-	struct symbol newSym;
-	newSym = malloc(sizeof (struct symbol));
-	newSym->address = addr;
-	newSym->sourceLine;
-	strcopy(newSym->name,sname);
-	while(tab[index] != NULL)
-	{
-		index++; //when this finishes, we've found an empty slot
-	}
-	tab[index] = newSym;
-	//we want to malloc a new symbol
-}
-
-int symbolExists(struct symbol* tab[], char *sname)
-{
-	int result = 0;
-	int index = 0;
-	while(tab[index] != null)
-	{
-		if( strcmp(sname, tab[index]->name) == 0)
-		{
-			result = -1;
-			break;
-		}
-		index++;
-	}
-	return result;
-}	
-**/

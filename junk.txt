@@ -1,0 +1,104 @@
+This serves to store commented blocks of code, in case they can be reused.
+This action is for readability purposes.
+
+main.c:
+  //memset(pcount, '\0', 1024 * sizeof(struct countertrack*));
+  //printf("COMMENT:%s", line);
+  //printf("NEW SYMBOL ON LINE: %s\n", line);
+  //printf("%x %d", *start, *start);
+  //printf("New instruction at %s\n", newdir);
+  //printf("%X %d\n", *start, *start);
+  //printf("%x %d", *start, *start);
+  //printf("New instruction at %s\n", newsym);
+  //printf("COMMENT:%s", line);
+  //printf("NEW SYMBOL ON LINE: %s\n", line);
+  /**
+  while(index <= (trcount - 1))
+  {
+  printf("%s\n", trecord[index]);
+  index++;
+  }
+  index = 1;
+  while(index <= mrcount)
+  {
+  printf("%s\n", mrecord[index]);
+  index++;
+  }
+
+  printf("%s\n", header);
+  printf("%s", trecord[0]);
+  */
+
+
+  /*while(insttab[index] != NULL)
+  {
+  if( strcmp(sname, insttab[index]->iname) == 0)
+  {
+  result = -1;
+  break;
+  }
+  index++;
+  }
+  */
+
+  //sscanf(tok3, "%d", &hextemp);
+  //int length = strlen(tempstring);
+  /*
+  void addSymbol(struct symbol* tab[], int addr, int src, char* sName)
+  {
+  int index = 0;
+  struct symbol newSym;
+  newSym = malloc(sizeof (struct symbol));
+  newSym->address = addr;
+  newSym->sourceLine;
+  strcopy(newSym->name,sname);
+  while(tab[index] != NULL)
+  {
+  index++; //when this finishes, we've found an empty slot
+  }
+  tab[index] = newSym;
+  //we want to malloc a new symbol
+  }
+
+  int symbolExists(struct symbol* tab[], char *sname)
+  {
+  int result = 0;
+  int index = 0;
+  while(tab[index] != null)
+  {
+  if( strcmp(sname, tab[index]->name) == 0)
+  {
+  result = -1;
+  break;
+  }
+  index++;
+  }
+  return result;
+  }	
+  **/
+END main.c
+
+symbols.c:
+/*struct symbol{
+	int address;
+	int sourceLine;
+	char name[7];
+};
+struct syminst{
+    char iname[5];
+    int opcode;
+};
+int matchDirective(char* name);
+int checkspecial(char* symbol);
+int symbolExists(struct symbol* tab[], char *sname);
+int IsAValidSymbol( char *TestSymbol, struct symbol* tab[] );*/
+END symbols.c
+
+header.h:
+/*
+struct symbols {
+	int	DefinedOnSourceLine;
+	int	Address;
+	char	Name[7]; };
+*/
+END headers.h
