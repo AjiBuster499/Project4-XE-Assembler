@@ -1,6 +1,6 @@
 #include "headers.h"
 #include "symbols.c"
-#define INST_MAX 26
+#define INST_MAX 59
 
 int mrcount = 0;
 int trcount = 0;
@@ -112,7 +112,7 @@ int main( int argc, char* argv[]) {
       if (strcmp( "START", newdir) == 0) {
         sscanf(tok3, "%x", start);
 
-        if((*start >= 0x8000)) {
+        if((*start >= 0x10000)) {
           printLine(lclone);
           printf("Line %d ERROR: RAM starts at an amount equal to or greater than SIC memory! \n", linecount);
           fclose(fp);
@@ -281,33 +281,67 @@ int main( int argc, char* argv[]) {
 
 // busywork to set up the opcode table.
 // condensed lines for space
+
 void initInstructions(struct syminst tab[]) {
   strcpy(tab[0].iname, "ADD");tab[0].opcode = 0x18;
-  strcpy(tab[1].iname, "AND");tab[1].opcode = 0x40;
-  strcpy(tab[2].iname, "DIV"); tab[2].opcode = 0x24;
-  strcpy(tab[3].iname, "J"); tab[3].opcode = 0x3C;
-  strcpy(tab[4].iname, "JEQ"); tab[4].opcode = 0x30;
-  strcpy(tab[5].iname, "JGT"); tab[5].opcode = 0x34;
-  strcpy(tab[6].iname, "JLT"); tab[6].opcode = 0x38;
-  strcpy(tab[7].iname, "JSUB"); tab[7].opcode = 0x48;
-  strcpy(tab[8].iname, "LDA"); tab[8].opcode = 0x00;
-  strcpy(tab[9].iname, "LDCH"); tab[9].opcode = 0x50;
-  strcpy(tab[10].iname, "LDL"); tab[10].opcode = 0x08;
-  strcpy(tab[11].iname, "LDX"); tab[11].opcode = 0x04;
-  strcpy(tab[12].iname, "MUL"); tab[12].opcode = 0x20;
-  strcpy(tab[13].iname, "OR"); tab[13].opcode = 0x44;
-  strcpy(tab[14].iname, "RD"); tab[14].opcode = 0xD8;
-  strcpy(tab[15].iname, "RSUB"); tab[15].opcode = 0x4C;
-  strcpy(tab[16].iname, "STA"); tab[16].opcode = 0x0C;
-  strcpy(tab[17].iname, "STCH"); tab[17].opcode = 0x54;
-  strcpy(tab[18].iname, "STL"); tab[18].opcode = 0x14;
-  strcpy(tab[19].iname, "STSW"); tab[19].opcode = 0x84;
-  strcpy(tab[20].iname, "STX"); tab[20].opcode = 0x10;
-  strcpy(tab[21].iname, "SUB"); tab[21].opcode = 0x1C;
-  strcpy(tab[22].iname, "WD"); tab[22].opcode = 0xDC;
-  strcpy(tab[23].iname, "TIX"); tab[23].opcode = 0x2C;
-  strcpy(tab[24].iname, "TD"); tab[24].opcode = 0xE0;
-  strcpy(tab[25].iname, "COMP"); tab[25].opcode = 0x28;
+  strcpy(tab[1].iname, "ADDF");tab[1].opcode = 0x58;
+  strcpy(tab[2].iname, "ADDR"); tab[2].opcode = 0x90;
+  strcpy(tab[3].iname, "AND"); tab[3].opcode = 0x40;
+  strcpy(tab[4].iname, "CLEAR"); tab[4].opcode = 0xB4;
+  strcpy(tab[5].iname, "COMP"); tab[5].opcode = 0x28;
+  strcpy(tab[6].iname, "COMPF"); tab[6].opcode = 0x88;
+  strcpy(tab[7].iname, "COMPR"); tab[7].opcode = 0xA0;
+  strcpy(tab[8].iname, "DIV"); tab[8].opcode = 0x24;
+  strcpy(tab[9].iname, "DIVF"); tab[9].opcode = 0x64;
+  strcpy(tab[10].iname, "DIVR"); tab[10].opcode = 0x9C;
+  strcpy(tab[11].iname, "FIX"); tab[11].opcode = 0xC4;
+  strcpy(tab[12].iname, "FLOAT"); tab[12].opcode = 0xC0;
+  strcpy(tab[13].iname, "HIO"); tab[13].opcode = 0xF4;
+  strcpy(tab[14].iname, "J"); tab[14].opcode = 0x3C;
+  strcpy(tab[15].iname, "JEQ"); tab[15].opcode = 0x30;
+  strcpy(tab[16].iname, "JGT"); tab[16].opcode = 0x34;
+  strcpy(tab[17].iname, "JLT"); tab[17].opcode = 0x38;
+  strcpy(tab[18].iname, "JSUB"); tab[18].opcode = 0x48;
+  strcpy(tab[19].iname, "LDA"); tab[19].opcode = 0x00;
+  strcpy(tab[20].iname, "LDB"); tab[20].opcode = 0x68;
+  strcpy(tab[21].iname, "LDCH"); tab[21].opcode = 0x50;
+  strcpy(tab[22].iname, "LDF"); tab[22].opcode = 0x70;
+  strcpy(tab[23].iname, "LDL"); tab[23].opcode = 0x08;
+  strcpy(tab[24].iname, "LDS"); tab[24].opcode = 0x6C;
+  strcpy(tab[25].iname, "LDT"); tab[25].opcode = 0x74;
+  strcpy(tab[26].iname, "LDX");tab[26].opcode = 0x04;
+  strcpy(tab[27].iname, "LPS");tab[27].opcode = 0xD0;
+  strcpy(tab[28].iname, "MUL"); tab[28].opcode = 0x20;
+  strcpy(tab[29].iname, "MULF"); tab[29].opcode = 0x60;
+  strcpy(tab[30].iname, "MULR"); tab[30].opcode = 0x98;
+  strcpy(tab[31].iname, "NORM"); tab[31].opcode = 0xC8;
+  strcpy(tab[32].iname, "OR"); tab[32].opcode = 0x44;
+  strcpy(tab[33].iname, "RD"); tab[33].opcode = 0xD8;
+  strcpy(tab[34].iname, "RMO"); tab[34].opcode = 0xAC;
+  strcpy(tab[35].iname, "RSUB"); tab[35].opcode = 0x4C;
+  strcpy(tab[36].iname, "SHIFTL"); tab[36].opcode = 0xA4;
+  strcpy(tab[37].iname, "SHIFTR"); tab[37].opcode = 0xA8;
+  strcpy(tab[38].iname, "SIO"); tab[38].opcode = 0xF0;
+  strcpy(tab[39].iname, "SSK"); tab[39].opcode = 0xEC;
+  strcpy(tab[40].iname, "STA"); tab[40].opcode = 0x0C;
+  strcpy(tab[41].iname, "STBR"); tab[41].opcode = 0x78;
+  strcpy(tab[42].iname, "STCH"); tab[42].opcode = 0x54;
+  strcpy(tab[43].iname, "STF"); tab[43].opcode = 0x80;
+  strcpy(tab[44].iname, "STI"); tab[44].opcode = 0xD4;
+  strcpy(tab[45].iname, "STL"); tab[45].opcode = 0x14;
+  strcpy(tab[46].iname, "STS"); tab[46].opcode = 0x7C;
+  strcpy(tab[47].iname, "STSW"); tab[47].opcode = 0xE8;
+  strcpy(tab[48].iname, "STT"); tab[48].opcode = 0x84;
+  strcpy(tab[49].iname, "STX"); tab[49].opcode = 0x10;
+  strcpy(tab[50].iname, "SUB"); tab[50].opcode = 0x1C;
+  strcpy(tab[51].iname, "SUBF"); tab[51].opcode = 0x5C;
+  strcpy(tab[52].iname, "SUBR");tab[52].opcode = 0x94;
+  strcpy(tab[53].iname, "SVC"); tab[53].opcode = 0xB0;
+  strcpy(tab[54].iname, "TD"); tab[54].opcode = 0xE0;
+  strcpy(tab[55].iname, "TIO"); tab[55].opcode = 0xF8;
+  strcpy(tab[56].iname, "TIX"); tab[56].opcode = 0x2C;
+  strcpy(tab[57].iname, "TIXR"); tab[57].opcode = 0xB8;
+  strcpy(tab[58].iname, "WD"); tab[58].opcode = 0xDC;
 }
 
 int instructionExists(struct syminst insttab[], char *sname) {
@@ -331,7 +365,7 @@ int addCtr(struct syminst tab[], char* symbol, char* tok3, unsigned int* ctr, ch
   memset(constant, '\0', 1024 * sizeof(char));
   
   if (instructionExists(tab, symbol) != 0) {
-    if (*ctr + 3 <= 0x8000) {
+    if (*ctr + 3 <= 0x10000) {
       *ctr += 3;
       return 1;
     } else {
@@ -342,7 +376,7 @@ int addCtr(struct syminst tab[], char* symbol, char* tok3, unsigned int* ctr, ch
   } else if (strcmp("RESB", symbol) == 0) {
     sscanf(tok3, "%d", &temp);
     
-    if (*ctr + temp <= 0x8000) {
+    if (*ctr + temp <= 0x10000) {
       *ctr += (temp);
     } else {
       printLine(line);
@@ -352,7 +386,7 @@ int addCtr(struct syminst tab[], char* symbol, char* tok3, unsigned int* ctr, ch
   } else if (strcmp("RESW", symbol) == 0) {
     sscanf(tok3, "%d", &temp);
 
-    if (*ctr + 3 * temp <= 0x8000) {
+    if (*ctr + 3 * temp <= 0x10000) {
       *ctr += 3*(temp);
     } else {
       printLine(line);
@@ -391,7 +425,7 @@ int addCtr(struct syminst tab[], char* symbol, char* tok3, unsigned int* ctr, ch
   } else if (strcmp("EXPORTS", symbol) == 0 ||
              strcmp("RESR", symbol) == 0) {
     sscanf(tok3, "%x", &hextemp);
-    if (*ctr + 3 * 8 <= 0x8000) {
+    if (*ctr + 3 * 8 <= 0x10000) {
       *ctr += 3 * 8;
       return 1;
     } else {
@@ -401,7 +435,7 @@ int addCtr(struct syminst tab[], char* symbol, char* tok3, unsigned int* ctr, ch
     }
   } else if (strcmp("WORD", symbol) == 0) {
     temp = strtol(tok3, NULL, 10);
-    if ((*ctr +(3) <= 0x8000) &&
+    if ((*ctr +(3) <= 0x10000) &&
        ((temp <= 8388608) && (temp >= -8388608))) {
       *ctr += 3;
       return 1;
@@ -411,7 +445,7 @@ int addCtr(struct syminst tab[], char* symbol, char* tok3, unsigned int* ctr, ch
       return 0;
     }
   } else if (strcmp("END", symbol) == 0) {
-    if (*ctr + 3 <= 0x8000) {
+    if (*ctr + 3 <= 0x10000) {
       *ctr += 3;
       return 1;
     } else {
