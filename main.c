@@ -1,5 +1,4 @@
 #include "headers.h"
-#include "symbols.c"
 #define INST_MAX 59
 
 int mrcount = 0;
@@ -63,51 +62,53 @@ int main( int argc, char* argv[]) {
   memset( tok3, '\0', 1024 * sizeof(char));
   int casenum = 0;
 	
-  while(fgets(line, 1024, fp) != NULL) {
+  while(!feof(fp)) {
+    fgets(line, 1024, fp);
+    // printf("%s", line);
     arrayCopy(line, lclone);
 
 		//good manners to close your file with fclose
 		//read line by line until the end of the file
-		if (line[0] == 35) {
+		if (line[0] == 46) { // period, . aka comment
       linecount++;
       continue;
     }
-    if ((line[0] >= 97) && (line[0] <= 122)) {
+    if ((line[0] >= 97) && (line[0] <= 122)) { // lowercase letter
       printLine(lclone);
       printf("Line %d ERROR: Symbol cannot start with a lowercase letter! \n", linecount);
       fclose(fp);
       return 0;
     }
-		if( (line[0] >= 65) && ( line[0]<= 90 )) { // this lets us know the line is between A and capital Z.
+		if ((line[0] >= 65) && ( line[0]<= 90 )) { // capital letter
       newsym = strtok( line, " \t\n\r");
       newdir = strtok( NULL, " \t\n\r");
       tok3 = strtok( NULL, "\t\n");
       casenum = IsAValidSymbol(newsym, symTab);
       switch(casenum) {
-          case 1:
-            break;
-          case 2:
-            printLine(lclone);
-            printf("ERROR. Symbol name cannot be longer than 6!\n");
-            fclose(fp);
-            return 0;
-          case 3:
-            printLine(lclone);
-            printf("Line %d ERROR: Symbol name cannot have the same name as an assembler directive! \n", linecount);
-            fclose(fp);
-            return 0;
-          case 4:
-            printLine(lclone);
-            printf("Line %d ERROR: Symbol name cannot contain the characters $,!, =, +, -, (, ), or @! \n", linecount);
-            fclose(fp);
-            return 0;
-          case 5:
-            printLine(lclone);
-            printf("Line %d ERROR: Symbol cannot exist more than once in the symbol table! \n", linecount);
-            fclose(fp);
-            return 0;
-          default:
-            break;
+        case 1:
+          break;
+        case 2:
+          printLine(lclone);
+          printf("ERROR. Symbol name cannot be longer than 6!\n");
+          fclose(fp);
+          return 0;
+        case 3:
+          printLine(lclone);
+          printf("Line %d ERROR: Symbol name cannot have the same name as an assembler directive! \n", linecount);
+          fclose(fp);
+          return 0;
+        case 4:
+          printLine(lclone);
+          printf("Line %d ERROR: Symbol name cannot contain the characters $,!, =, +, -, (, ), or @! \n", linecount);
+          fclose(fp);
+          return 0;
+        case 5:
+          printLine(lclone);
+          printf("Line %d ERROR: Symbol cannot exist more than once in the symbol table! \n", linecount);
+          fclose(fp);
+          return 0;
+        default:
+          break;
       }
       if (strcmp( "START", newdir) == 0) {
         sscanf(tok3, "%x", start);
@@ -130,12 +131,15 @@ int main( int argc, char* argv[]) {
       pcount[linecount]->counter = *start;
       prev = *start;
       addSymbol(symTab, start, linecount, newsym);
+      if (strcmp("END", newdir) == 0) { // hit end of file
+        break;
+      }
       if (addCtr(inst, newdir, tok3, start, lclone, linecount) == 0) {
         fclose(fp);
         return 0;
       }
 
-    } else if((line[0] == '\t') || line[0] == ' ' ) {
+    } else if((line[0] == '\t') || line[0] == ' ' ) { // non-symbol assembly line
       newsym = strtok( line, " \t\n\r");
       newdir = strtok( NULL, " \t\n\r");
 
@@ -167,113 +171,114 @@ int main( int argc, char* argv[]) {
     
     linecount++;
   } // end while
-  if (init.name[0] == '\0') {
-    printf("ERROR: START directive cannot be found! \n");
-    fclose(fp);
-    return 0;
-  }
+  
+  // if (init.name[0] == '\0') {
+  //   printf("ERROR: START directive cannot be found! \n");
+  //   fclose(fp);
+  //   return 0;
+  // }
 
-  fclose(fp);
+  // fclose(fp);
 
-  fp = fopen( argv[1], "r");
+  // fp = fopen( argv[1], "r");
 
-  int linecount2 = 1;
-  unsigned int prglen = prev - init.address;
-  char* header;
-  char* end;
-  int ctratline;
-  struct symbol* tempsym;
+  // int linecount2 = 1;
+  // unsigned int prglen = prev - init.address;
+  // char* header;
+  // char* end;
+  // int ctratline;
+  // struct symbol* tempsym;
 
-  tempsym = malloc(sizeof(struct symbol*));
-  header = malloc(26 * sizeof(char));
-  end = malloc(10 * sizeof(char));
+  // tempsym = malloc(sizeof(struct symbol*));
+  // header = malloc(26 * sizeof(char));
+  // end = malloc(10 * sizeof(char));
 
-  while(fgets(line, 1024, fp) != NULL) {
-    arrayCopy(line, lclone);
-    if (line[0] == 35) {
-      linecount2++;
-      continue;
-    }
-    if ((line[0] >= 65) && (line[0] <= 90)) { // capital A-Z
-      newsym = strtok(line, " \t\n\r");
-      newdir = strtok(NULL, " \t\n\r");
-      tok3 = strtok(NULL, "\t\n");
+  // while(fgets(line, 1024, fp) != NULL) {
+  //   arrayCopy(line, lclone);
+  //   if (line[0] == 35) {
+  //     linecount2++;
+  //     continue;
+  //   }
+  //   if ((line[0] >= 65) && (line[0] <= 90)) { // capital A-Z
+  //     newsym = strtok(line, " \t\n\r");
+  //     newdir = strtok(NULL, " \t\n\r");
+  //     tok3 = strtok(NULL, "\t\n");
       
-      if (strcmp("RESB", newdir) == 0 ||
-          strcmp("RESW", newdir) == 0 ||
-          strcmp("START", newdir) == 0) {
-        linecount2++;
-        continue;
-      }
+  //     if (strcmp("RESB", newdir) == 0 ||
+  //         strcmp("RESW", newdir) == 0 ||
+  //         strcmp("START", newdir) == 0) {
+  //       linecount2++;
+  //       continue;
+  //     }
       
-      if (strcmp("END", newdir) == 0) {
-        tempsym = symbolReturn(symTab, tok3);
+  //     if (strcmp("END", newdir) == 0) {
+  //       tempsym = symbolReturn(symTab, tok3);
         
-        if(tempsym == NULL &&
-           tok3 != NULL) {
-          printLine(lclone);
-          printf("ERROR: Symbol could not be found in symbol table!\n");
-          fclose(fp);
-          return 0;
-        }
+  //       if(tempsym == NULL &&
+  //          tok3 != NULL) {
+  //         printLine(lclone);
+  //         printf("ERROR: Symbol could not be found in symbol table!\n");
+  //         fclose(fp);
+  //         return 0;
+  //       }
     
-        sprintf(end, "E00%06X", tempsym->address);
-        linecount2++;
-        continue;
-      }
+  //       sprintf(end, "E00%06X", tempsym->address);
+  //       linecount2++;
+  //       continue;
+  //     }
 
-      ctratline = pcount[linecount2]->counter;
+  //     ctratline = pcount[linecount2]->counter;
       
-      if (generateTrec(newdir, tok3, symTab, ctratline, lclone, linecount2, trecord, mrecord, inst) == 0) {
-        fclose(fp);
-        return 0;
-      } else {
-        linecount2++;
-      }
+  //     if (generateTrec(newdir, tok3, symTab, ctratline, lclone, linecount2, trecord, mrecord, inst) == 0) {
+  //       fclose(fp);
+  //       return 0;
+  //     } else {
+  //       linecount2++;
+  //     }
 
-    } else if (line[0] == '\t') {
-      newsym = strtok(line, " \t\n\r");
-      newdir = strtok(NULL, " \t\n\r");
+  //   } else if (line[0] == '\t') {
+  //     newsym = strtok(line, " \t\n\r");
+  //     newdir = strtok(NULL, " \t\n\r");
 
-      if (strcmp("RESB", newsym) == 0 ||
-          strcmp("RESW", newsym) == 0 ||
-          strcmp("START", newsym) == 0) {
-        linecount2++;
-        continue;
-      }
+  //     if (strcmp("RESB", newsym) == 0 ||
+  //         strcmp("RESW", newsym) == 0 ||
+  //         strcmp("START", newsym) == 0) {
+  //       linecount2++;
+  //       continue;
+  //     }
 
-      if(strcmp("END", newsym) == 0) {
-        tempsym = symbolReturn(symTab, tok3);
+  //     if(strcmp("END", newsym) == 0) {
+  //       tempsym = symbolReturn(symTab, tok3);
 
-        if(tempsym == NULL) {
-          sprintf(end, "E%06X", init.address);
-        } else {
-          sprintf(end, "E%06X", tempsym->address);
-        }
+  //       if(tempsym == NULL) {
+  //         sprintf(end, "E%06X", init.address);
+  //       } else {
+  //         sprintf(end, "E%06X", tempsym->address);
+  //       }
 
-        linecount2++;
-        continue;
-      }
+  //       linecount2++;
+  //       continue;
+  //     }
 
-      ctratline = pcount[linecount2]->counter;
+  //     ctratline = pcount[linecount2]->counter;
 
-      if (generateTrec(newsym, newdir, symTab, ctratline, lclone, linecount2, trecord, mrecord, inst) == 0) {
-        fclose(fp);
-        return 0;
-      } else {
-        linecount2++;
-      }
-    }
-  } // end while
+  //     if (generateTrec(newsym, newdir, symTab, ctratline, lclone, linecount2, trecord, mrecord, inst) == 0) {
+  //       fclose(fp);
+  //       return 0;
+  //     } else {
+  //       linecount2++;
+  //     }
+  //   }
+  // } // end while
   printTable(symTab);
-  sprintf(header, "H%s\t00%04X%07X", init.name, init.address, prglen);
+  // sprintf(header, "H%s\t00%04X%07X", init.name, init.address, prglen);
 
-  fclose(fp);
-  strcat(argv[1], ".obj");
-  fopen(argv[1], "w");
+  // fclose(fp);
+  // strcat(argv[1], ".obj");
+  // fopen(argv[1], "w");
 
-  createFile(fp, trecord, mrecord, header, end);
-  printf("Object file '%s' created.\n", argv[1]);
+  // createFile(fp, trecord, mrecord, header, end);
+  // printf("Object file '%s' created.\n", argv[1]);
   fclose(fp);
 
 	return 0;
@@ -363,10 +368,47 @@ int addCtr(struct syminst tab[], char* symbol, char* tok3, unsigned int* ctr, ch
   char* constant;
   constant = malloc(1024 * sizeof(char));
   memset(constant, '\0', 1024 * sizeof(char));
+  int addrInc = 3;
   
+  // check if there is a special notation for XE
+  // Notes:
+  // + indicates the instruction uses the expanded Format 4 (4 bytes)
+  // + is found at the beginning of the instruction
+  // @ indicates Indirect Addressing, found at the beginning of the operand
+  // ,X (Present in Vanilla SIC) indicates indexed addressing, found at the end of the operand
+  // # indicates Immediate Addressing, found at the beginning of the operand
+  // Additionally, some instructions, notable the register-register ones,
+  // only use 2 bytes, so a check for them must be necessary
+
+  if (symbol[0] == '+') { // instruction is using Format 4
+    addrInc = 4;
+    symbol++;
+  }
+  if (strcmp(symbol, "ADDR") == 0 || // instruction uses format 2
+      strcmp(symbol, "CLEAR") == 0 ||
+      strcmp(symbol, "COMPR") == 0 ||
+      strcmp(symbol, "DIVR") == 0 ||
+      strcmp(symbol, "MULR") == 0 ||
+      strcmp(symbol, "RMO") == 0 ||
+      strcmp(symbol, "SHIFTL") == 0 ||
+      strcmp(symbol, "SHIFTR") == 0 ||
+      strcmp(symbol, "SUBR") == 0 ||
+      strcmp(symbol, "SVC") == 0 ||
+      strcmp(symbol, "TIXR") == 0) {
+    addrInc = 2;
+  } else if (
+    strcmp(symbol, "FIX") == 0 ||
+    strcmp(symbol, "FLOAT") == 0 ||
+    strcmp(symbol, "HIO") == 0 ||
+    strcmp(symbol, "NORM") == 0 ||
+    strcmp(symbol, "SIO") == 0 ||
+    strcmp(symbol, "TIO") == 0
+    ) {
+      addrInc = 1;
+  }
   if (instructionExists(tab, symbol) != 0) {
-    if (*ctr + 3 <= 0x10000) {
-      *ctr += 3;
+    if (*ctr + addrInc <= 0x10000) {
+      *ctr += addrInc;
       return 1;
     } else {
       printLine(line);
