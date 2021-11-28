@@ -172,113 +172,113 @@ int main( int argc, char* argv[]) {
     linecount++;
   } // end while
   
-  // if (init.name[0] == '\0') {
-  //   printf("ERROR: START directive cannot be found! \n");
-  //   fclose(fp);
-  //   return 0;
-  // }
+    if (init.name[0] == '\0') {
+      printf("ERROR: START directive cannot be found! \n");
+      fclose(fp);
+      return 0;
+    }
 
-  // fclose(fp);
+    fclose(fp);
 
-  // fp = fopen( argv[1], "r");
+    fp = fopen( argv[1], "r");
 
-  // int linecount2 = 1;
-  // unsigned int prglen = prev - init.address;
-  // char* header;
-  // char* end;
-  // int ctratline;
-  // struct symbol* tempsym;
+    int linecount2 = 1;
+    unsigned int prglen = prev - init.address;
+    char* header;
+    char* end;
+    int ctratline;
+    struct symbol* tempsym;
 
-  // tempsym = malloc(sizeof(struct symbol*));
-  // header = malloc(26 * sizeof(char));
-  // end = malloc(10 * sizeof(char));
+    tempsym = malloc(sizeof(struct symbol*));
+    header = malloc(26 * sizeof(char));
+    end = malloc(10 * sizeof(char));
 
-  // while(fgets(line, 1024, fp) != NULL) {
-  //   arrayCopy(line, lclone);
-  //   if (line[0] == 35) {
-  //     linecount2++;
-  //     continue;
-  //   }
-  //   if ((line[0] >= 65) && (line[0] <= 90)) { // capital A-Z
-  //     newsym = strtok(line, " \t\n\r");
-  //     newdir = strtok(NULL, " \t\n\r");
-  //     tok3 = strtok(NULL, "\t\n");
+    while(fgets(line, 1024, fp) != NULL) {
+      arrayCopy(line, lclone);
+      if (line[0] == 35) {
+        linecount2++;
+        continue;
+      }
+      if ((line[0] >= 65) && (line[0] <= 90)) {   //capital A-Z
+        newsym = strtok(line, " \t\n\r");
+        newdir = strtok(NULL, " \t\n\r");
+        tok3 = strtok(NULL, "\t\n");
       
-  //     if (strcmp("RESB", newdir) == 0 ||
-  //         strcmp("RESW", newdir) == 0 ||
-  //         strcmp("START", newdir) == 0) {
-  //       linecount2++;
-  //       continue;
-  //     }
+        if (strcmp("RESB", newdir) == 0 ||
+            strcmp("RESW", newdir) == 0 ||
+            strcmp("START", newdir) == 0) {
+          linecount2++;
+          continue;
+        }
       
-  //     if (strcmp("END", newdir) == 0) {
-  //       tempsym = symbolReturn(symTab, tok3);
+        if (strcmp("END", newdir) == 0) {
+          tempsym = symbolReturn(symTab, tok3);
         
-  //       if(tempsym == NULL &&
-  //          tok3 != NULL) {
-  //         printLine(lclone);
-  //         printf("ERROR: Symbol could not be found in symbol table!\n");
-  //         fclose(fp);
-  //         return 0;
-  //       }
+          if(tempsym == NULL &&
+             tok3 != NULL) {
+            printLine(lclone);
+            printf("ERROR: Symbol could not be found in symbol table!\n");
+            fclose(fp);
+            return 0;
+          }
     
-  //       sprintf(end, "E00%06X", tempsym->address);
-  //       linecount2++;
-  //       continue;
-  //     }
+          sprintf(end, "E00%06X", tempsym->address);
+          linecount2++;
+          continue;
+        }
 
-  //     ctratline = pcount[linecount2]->counter;
+        ctratline = pcount[linecount2]->counter;
       
-  //     if (generateTrec(newdir, tok3, symTab, ctratline, lclone, linecount2, trecord, mrecord, inst) == 0) {
-  //       fclose(fp);
-  //       return 0;
-  //     } else {
-  //       linecount2++;
-  //     }
+        if (generateTrec(newdir, tok3, symTab, ctratline, lclone, linecount2, trecord, mrecord, inst) == 0) {
+          fclose(fp);
+          return 0;
+        } else {
+          linecount2++;
+        }
 
-  //   } else if (line[0] == '\t') {
-  //     newsym = strtok(line, " \t\n\r");
-  //     newdir = strtok(NULL, " \t\n\r");
+      } else if (line[0] == '\t') {
+        newsym = strtok(line, " \t\n\r");
+        newdir = strtok(NULL, " \t\n\r");
 
-  //     if (strcmp("RESB", newsym) == 0 ||
-  //         strcmp("RESW", newsym) == 0 ||
-  //         strcmp("START", newsym) == 0) {
-  //       linecount2++;
-  //       continue;
-  //     }
+        if (strcmp("RESB", newsym) == 0 ||
+            strcmp("RESW", newsym) == 0 ||
+            strcmp("START", newsym) == 0) {
+          linecount2++;
+          continue;
+        }
 
-  //     if(strcmp("END", newsym) == 0) {
-  //       tempsym = symbolReturn(symTab, tok3);
+        if(strcmp("END", newsym) == 0) {
+          tempsym = symbolReturn(symTab, tok3);
 
-  //       if(tempsym == NULL) {
-  //         sprintf(end, "E%06X", init.address);
-  //       } else {
-  //         sprintf(end, "E%06X", tempsym->address);
-  //       }
+          if(tempsym == NULL) {
+            sprintf(end, "E%06X", init.address);
+          } else {
+            sprintf(end, "E%06X", tempsym->address);
+          }
 
-  //       linecount2++;
-  //       continue;
-  //     }
+          linecount2++;
+          continue;
+        }
 
-  //     ctratline = pcount[linecount2]->counter;
+        ctratline = pcount[linecount2]->counter;
 
-  //     if (generateTrec(newsym, newdir, symTab, ctratline, lclone, linecount2, trecord, mrecord, inst) == 0) {
-  //       fclose(fp);
-  //       return 0;
-  //     } else {
-  //       linecount2++;
-  //     }
-  //   }
-  // } // end while
-  printTable(symTab);
-  // sprintf(header, "H%s\t00%04X%07X", init.name, init.address, prglen);
+        if (generateTrec(newsym, newdir, symTab, ctratline, lclone, linecount2, trecord, mrecord, inst) == 0) {
+          fclose(fp);
+          return 0;
+        } else {
+          linecount2++;
+        }
+      }
+    }   //end while
+   printTable(symTab);
+    sprintf(header, "H%s\t00%04X%07X", init.name, init.address, prglen);
 
-  // fclose(fp);
-  // strcat(argv[1], ".obj");
-  // fopen(argv[1], "w");
+    fclose(fp);
+    strcat(argv[1], ".obj");
+    fopen(argv[1], "w");
 
-  // createFile(fp, trecord, mrecord, header, end);
-  // printf("Object file '%s' created.\n", argv[1]);
+    createFile(fp, trecord, mrecord, header, end);
+    printf("Object file '%s' created.\n", argv[1]);
   fclose(fp);
 
 	return 0;

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #ifndef HEADERS
 #define HEADERS
@@ -9,6 +10,7 @@ struct symbol {
 	int address;
 	int sourceLine;
 	char name[7];
+    bool usesBase;
 };
 
 struct syminst{
