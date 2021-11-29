@@ -4,7 +4,7 @@
 int mrcount = 0;
 int trcount = 0;
 struct symbol init; //this is for seeing what the start symbol is
-
+int objbase; //need to find the base at each moment
 int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int locctr, char error[], int srcline,
                  char trec[][71], char mrec[][71], struct syminst inst[]);
 int createFile(FILE* fp, char trec[][71], char mrec[][71], char* header, char* end);
@@ -271,7 +271,7 @@ int main( int argc, char* argv[]) {
       }
     }   //end while
    printTable(symTab);
-    sprintf(header, "H%s\t00%04X%07X", init.name, init.address, prglen);
+    sprintf(header, "H%s\t %06X%07X", init.name, init.address, prglen);
 
     fclose(fp);
     strcat(argv[1], ".obj");
@@ -574,6 +574,14 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
   char* indexing;
   indexing = malloc(sizeof(char*));
 
+  bool isFour = false;
+  short nibitadd = 3;
+  int symaddress = 0;
+  int xbpe = 0;
+  int signedthreeaddr = 0;
+  unsigned int threeaddr = 0;
+  bool base = false;
+  bool isConstant = false;
   if(strcmp(first, "BYTE") == 0) {
     if(second[0] == 'X') { //hexadecimal, initiate hex parsing procedure
       strtok(second, "'");
@@ -582,7 +590,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
       sscanf(tempstring, "%X", &hextemp);
       opcode = strlen(tempstring);
      
-      sprintf(finalstring, "T00%04X%02X%06X", locctr,opcode, hextemp );
+      sprintf(finalstring, "T %06X%02X%06X", locctr,opcode, hextemp );
       strcpy(trec[trcount], finalstring);
      
       trcount++;
@@ -606,7 +614,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
         } else {
           memused = 30;
         }
-        sprintf(finalstring, "T00%04X%02X", locctr, memused);
+        sprintf(finalstring, "T %06X%02X", locctr, memused);
         
         if(memused < 3) {
           if (memused == 2) {
@@ -634,16 +642,22 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
   }
   if(strcmp(first, "WORD") == 0) {
     word = atoi(second);
-    sprintf(finalstring, "T00%04X03%06X", locctr, word);
+    sprintf(finalstring, "T %06X03%06X", locctr, word);
     strcpy(trec[trcount], finalstring);
     trcount++;
     return 1;
   }
 
+  if(first[0] == 44)
+    {
+        isFour = true;
+        strtok(first, "+");
+    }
+
   opcode = returnOpcode(inst, first);
 
   if(strcmp(first, "RSUB") == 0) {
-    sprintf(finalstring,"T00%04X03%02X0000", locctr, opcode );
+    sprintf(finalstring,"T %06X03%02X0000", locctr, opcode );
     strcpy(trec[trcount], finalstring);
     trcount++;
     strcpy(mrec[mrcount], generateMrec(locctr));
@@ -664,7 +678,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
         return 0;
       }
 
-      sprintf(finalstring,"T00%04X03%02X%04X", locctr, opcode, temp->address);
+      sprintf(finalstring,"T %06X03%02X%04X", locctr, opcode, temp->address);
       
       strcpy(trec[trcount], finalstring);
       strcpy(mrec[mrcount], generateMrec(locctr));
@@ -682,7 +696,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
       hextemp = temp->address;
       hextemp |= 1 << 15;
       
-      sprintf(finalstring,"T00%04X03%02X%04X", locctr, opcode, hextemp);
+      sprintf(finalstring,"T %06X03%02X%04X", locctr, opcode, hextemp);
       strcpy(trec[trcount], finalstring);
       
       trcount++;
@@ -694,22 +708,119 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
       printf("Line %d ERROR: Invalid addressing mode!\n", srcline);
       return 0;
     }
-  } else if (opcode == -1) {
+  }
+  else if (opcode == -1) {
     printLine(error);
     printf("Line %d ERROR: Could not find instruction!\n", srcline);
     return 0;
-  } else {
-    temp = symbolReturn(tab,second);
-    
+  }
+      /*
+         *  This else implements the T record for the SIC/XE version of an instruction command.
+         *  Checklist - X for incomplete, Y for complete (not necessarily in order of how they should be implemented in code
+         *      Y > Implement a mechanism for determining whether to use base or PC addressing
+         *      y > Implement a mechanism for determining the wanted addressing mode using +, @, and #
+         *      y > Remove the symbol used by the code at the start
+         *          could possibly be implemented by recording the symbol first, then doing strtok(symbol, "@#")
+         *      Y/X > Implement the various ways of implementing the flag bits + various ways of addressing
+         *          flag bits are 3 bytes
+         *          the various ways seem to be identical in set up, not sure if we have to do anything different to the counter part
+         *          or it's just a matter of making sure the flag bits are set up correctly
+         *          (only thing missing from implementing this is the ,X addressing modes)
+         *      X > Float data types
+         *      (might be missing some things so this list isn't comprehensive!)
+         *      X > update other data types (may not need to be updated, unsure)
+         */
+  else {
+       //ni are = 3, first two bits are set to 1
+      if(strcmp("LDB", first)) //check for changes to base
+      {
+          objbase = locctr;
+      }
+      if (second[0] == 64) //#
+      {
+          nibitadd = 2;
+          strtok(second, "@");
+      } else if (second[0] == 35) {
+          nibitadd = 1;
+          strtok(second, "#");
+      }
+
+      temp = symbolReturn(tab, second);
+
+
+      if(isFour== true)
+      {
+          opcode += 1;
+          sprintf(finalstring,"T %06X 04 %02X %01X %05X", locctr, opcode, xbpe, temp->address); //locctr (6 hex) -> object code length (4 bytes, 2 hex) -> opcode(2 hex(with ni bits clipped into it)
+          strcpy(trec[trcount], finalstring);                                       //(xbpe) -> 1 hex (address) -> 5 hex characters
+          strcpy(mrec[mrcount], generateMrec(locctr));
+      }
+      //invalid symbol = we have a constant or an actual invalid symbol
+      if (temp == NULL) {
+          if (second[0] == 48 && second[1] == '\n') {
+              threeaddr = 0; //test if the constant is a zero
+              isConstant = true;
+          }
+          else {
+              threeaddr = atoi(second); //atoi will return 0 if this is an actually invalid symbol
+              isConstant = true;
+              if (threeaddr == 0) {
+                  printLine(error);
+                  printf("Line %d ERROR: Symbol not found!\n", srcline);
+                  return 0;
+              }
+          }
+      }
+      else {
+      symaddress = temp->address;
+      base = temp->usesBase; //store base in here so we're not calling a null symbol
+           }
+        if(isConstant == true)
+        {
+            opcode += nibitadd;
+            xbpe += 0;
+            sprintf(finalstring,"T %06X 03 %1X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
+                                                                                        //xbpe = 1 byte
+        }
+        else if ((locctr < symaddress) && ((symaddress - locctr) <= 0x2047) && (base == false) && (isConstant == false)) //positive 2047 PC relative
+        {
+            threeaddr = symaddress - locctr;
+            opcode += nibitadd;
+            xbpe += 2;
+            sprintf(finalstring,"T %06X 03 %1X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
+                                                                                    //xbpe = 1 byte
+        }
+        else if ((locctr > symaddress) && ((locctr - symaddress) <= 0x2048) && (base == false) && (isConstant == false)) //more than -2047 PC relative backwards
+        {
+            threeaddr = locctr - symaddress;
+            threeaddr = (~threeaddr) + 1;
+            threeaddr = threeaddr & 0x0000FFFF; //AND makes sure that we only have the bits we need, everything else stays the same
+            opcode += nibitadd;
+            xbpe += 4;
+            sprintf(finalstring,"T %06X 03 %1X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
+                                                                                        //xbpe = 1 byte
+        }
+        else if((((objbase - init.address) >= 0) && ((objbase - init.address) <= 4095 )))//base relative
+        {
+            threeaddr = objbase - init.address;
+            opcode += nibitadd;
+            xbpe += 1;
+            sprintf(finalstring,"T %06X 03 %02X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
+        }
+    //consider format 4 error
+        else{
+            printLine(error);
+            printf("Line %d ERROR: Assembler could not resolve this into PC-Relative or Base-relative addressing, consider using Format 4.\n", srcline);
+            return 0;
+    }
     if (temp == NULL) {
       printLine(error);
       printf("Line %d ERROR: Symbol not found!\n", srcline);
       return 0;
     }
     
-    sprintf(finalstring,"T00%04X03%02X%04X", locctr, opcode, temp->address);
-    strcpy(trec[trcount], finalstring);
-    strcpy(mrec[mrcount], generateMrec(locctr));
+    sprintf(finalstring,"T %06X03%02X%04X", locctr, opcode, temp->address);
+
   }
 
   strcpy(trec[trcount], finalstring);
