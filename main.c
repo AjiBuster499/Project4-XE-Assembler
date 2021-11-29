@@ -1120,7 +1120,6 @@ int createFile(FILE* fp, char trec[][71], char mrec[][71], char* header, char* e
     fprintf(fp, "%s\n", mrec[index]);
     index++;
   }
-
   fprintf(fp, "%s", end);
   return 0;
 }
