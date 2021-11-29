@@ -582,6 +582,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
   unsigned int threeaddr = 0;
   bool base = false;
   bool isConstant = false;
+  bool xbitset = false;
   if(strcmp(first, "BYTE") == 0) {
     if(second[0] == 'X') { //hexadecimal, initiate hex parsing procedure
       strtok(second, "'");
@@ -655,7 +656,10 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
     }
 
   opcode = returnOpcode(inst, first);
-
+    if(strcmp("LDB", first)) //check for changes to base
+    {
+        objbase = locctr;
+    }
   if(strcmp(first, "RSUB") == 0) {
     sprintf(finalstring,"T %06X03%02X0000", locctr, opcode );
     strcpy(trec[trcount], finalstring);
@@ -664,7 +668,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
     return 1;
   }
 
-  if (strcmp("STCH", first) == 0 ||
+ /** if (strcmp("STCH", first) == 0 ||
       strcmp("LDCH", first) == 0) {
     sym = strtok(second, " ,");
     indexing = strtok(NULL, " ,");
@@ -701,7 +705,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
       
       trcount++;
       strcpy(mrec[mrcount], generateMrec(locctr));
-      
+
       return 1;
     } else {
       printLine(error);
@@ -709,7 +713,8 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
       return 0;
     }
   }
-  else if (opcode == -1) {
+  */
+  if (opcode == -1) {
     printLine(error);
     printf("Line %d ERROR: Could not find instruction!\n", srcline);
     return 0;
@@ -717,6 +722,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
       /*
          *  This else implements the T record for the SIC/XE version of an instruction command.
          *  Checklist - X for incomplete, Y for complete (not necessarily in order of how they should be implemented in code
+         *  (might be missing some things so this list isn't comprehensive!)
          *      Y > Implement a mechanism for determining whether to use base or PC addressing
          *      y > Implement a mechanism for determining the wanted addressing mode using +, @, and #
          *      y > Remove the symbol used by the code at the start
@@ -727,15 +733,12 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
          *          or it's just a matter of making sure the flag bits are set up correctly
          *          (only thing missing from implementing this is the ,X addressing modes)
          *      X > Float data types
-         *      (might be missing some things so this list isn't comprehensive!)
+         *
          *      X > update other data types (may not need to be updated, unsure)
+         *      X > implement instructions that have a different word count (specifically instructions that require 1/2 word counts)
          */
   else {
        //ni are = 3, first two bits are set to 1
-      if(strcmp("LDB", first)) //check for changes to base
-      {
-          objbase = locctr;
-      }
       if (second[0] == 64) //#
       {
           nibitadd = 2;
@@ -744,13 +747,35 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
           nibitadd = 1;
           strtok(second, "#");
       }
+      if (strcmp("STCH", first) == 0 ||
+          strcmp("LDCH", first) == 0)
+        {
+            sym = strtok(second, " ,");
+            indexing = strtok(NULL, " ,");
+            temp = symbolReturn(tab, sym);
+            if (*indexing == 'X')
+            {
+                xbitset = true;
+            }
+            else if (indexing != NULL)
+            {
+                printLine(error);
+                printf("Line %d ERROR: Invalid addressing mode!\n", srcline);
+                return 0;
+            }
 
-      temp = symbolReturn(tab, second);
-
+        }
+      else {
+          temp = symbolReturn(tab, second);
+      }
 
       if(isFour== true)
       {
           opcode += 1;
+          if (xbitset == true)
+          {
+              xbpe += 8;
+          }
           sprintf(finalstring,"T %06X 04 %02X %01X %05X", locctr, opcode, xbpe, temp->address); //locctr (6 hex) -> object code length (4 bytes, 2 hex) -> opcode(2 hex(with ni bits clipped into it)
           strcpy(trec[trcount], finalstring);                                       //(xbpe) -> 1 hex (address) -> 5 hex characters
           strcpy(mrec[mrcount], generateMrec(locctr));
@@ -779,16 +804,26 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
         {
             opcode += nibitadd;
             xbpe += 0;
+            if (xbitset == true)
+            {
+                xbpe += 8;
+            }
             sprintf(finalstring,"T %06X 03 %1X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
                                                                                         //xbpe = 1 byte
+            strcpy(trec[trcount], finalstring);
         }
         else if ((locctr < symaddress) && ((symaddress - locctr) <= 0x2047) && (base == false) && (isConstant == false)) //positive 2047 PC relative
         {
             threeaddr = symaddress - locctr;
             opcode += nibitadd;
             xbpe += 2;
+            if (xbitset == true)
+            {
+                xbpe += 8;
+            }
             sprintf(finalstring,"T %06X 03 %1X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
                                                                                     //xbpe = 1 byte
+            strcpy(trec[trcount], finalstring);
         }
         else if ((locctr > symaddress) && ((locctr - symaddress) <= 0x2048) && (base == false) && (isConstant == false)) //more than -2047 PC relative backwards
         {
@@ -797,15 +832,25 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
             threeaddr = threeaddr & 0x0000FFFF; //AND makes sure that we only have the bits we need, everything else stays the same
             opcode += nibitadd;
             xbpe += 4;
+            if (xbitset == true)
+            {
+                xbpe += 8;
+            }
             sprintf(finalstring,"T %06X 03 %1X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
                                                                                         //xbpe = 1 byte
+            strcpy(trec[trcount], finalstring);
         }
         else if((((objbase - init.address) >= 0) && ((objbase - init.address) <= 4095 )))//base relative
         {
             threeaddr = objbase - init.address;
             opcode += nibitadd;
             xbpe += 1;
+            if (xbitset == true)
+            {
+                xbpe += 8;
+            }
             sprintf(finalstring,"T %06X 03 %02X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
+            strcpy(trec[trcount], finalstring);
         }
     //consider format 4 error
         else{
