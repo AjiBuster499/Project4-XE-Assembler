@@ -669,16 +669,16 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
     return 1;
   }
 
-  if(first[0] == 44)
+  if(first[0] == 43)
     {
         isFour = true;
-        strtok(first, "+");
+        first = strtok(first, "+");
     }
     opcode = returnOpcode(inst, first);
   if((strcmp(first, "FIX") == 0)|| (strcmp(first, "FLOAT") == 0) || (strcmp(first, "HIO") == 0) || (strcmp(first, "NORM") == 0) ||
           (strcmp(first, "SIO") == 0) || (strcmp(first, "TIO") == 0) )
     {
-        sprintf(finalstring,"T %06X 01 %02X %01X", locctr, opcode, xbpe, temp->address);
+        sprintf(finalstring,"T %06X 01 %02X", locctr, opcode);
         strcpy(trec[trcount], finalstring);
         trcount++;
     }
@@ -712,6 +712,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
             return 0;
         }
         sprintf(finalstring,"T %06X 02 %02X %01X %01X", locctr, opcode, r1, r2);
+        return 1;
     }
   if((strcmp(first,"SHIFTL") == 0) || strcmp(first, "SHIFTR") == 0)
     {
@@ -730,8 +731,8 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
         }
         sprintf(finalstring,"T %06X 02 %02X %01X %01X", locctr, opcode, r1, r2);
     };
-  if((strcmp(first, "CLEAR") == 0) || (strcmp(first, "ADDR") == 0)|| (strcmp(first, "DIVR") == 0 ) || (strcmp(first, "MULR") == 0)
-     || (strcmp(first, "RMO") == 0) || (strcmp(first,"SUBR") == 0) )
+  if((strcmp(first, "ADDR") == 0)|| (strcmp(first, "DIVR") == 0 ) || (strcmp(first, "MULR") == 0)
+     || (strcmp(first, "RMO") == 0) || (strcmp(first,"SUBR") == 0) || strcmp(first, "COMPR") == 0)
     {
         //sym = r1
         sym = strtok(second, " ,");
@@ -746,6 +747,9 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
             return 0;
         }
         sprintf(finalstring,"T %06X 02 %02X %01X %01X", locctr, opcode, r1, r2);
+        strcpy(trec[trcount], finalstring);
+        trcount++;
+        return 1;
     }
 
     if(strcmp("LDB", first) == 0) //check for changes to base
@@ -830,18 +834,19 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
          *      X > implement instructions that have a different word count (specifically instructions that require 1/2 word counts)
          */
   else {
-       //ni are = 3, first two bits are set to 1
-      if (second[0] == 64) //#
-      {
-          nibitadd = 2;
-          strtok(second, "@");
-      } else if (second[0] == 35) {
-          nibitadd = 1;
-          strtok(second, "#");
-      }
-      if (strcmp("RSUB", first) == 0)
-      {
+      //ni are = 3, first two bits are set to 1
+      if (strcmp("RSUB", first) == 0) {
           rsub = true;
+      }
+      if (rsub == false) {
+          if (second[0] == 64) //#
+          {
+              nibitadd = 2;
+              second = strtok(second, "@");
+          } else if (second[0] == 35) {
+              nibitadd = 1;
+              second = strtok(second, "#");
+          }
       }
       if (strcmp("STCH", first) == 0 ||
           strcmp("LDCH", first) == 0)
@@ -861,30 +866,14 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
             }
 
         }
-      else {
+      else if (rsub == false) {
           temp = symbolReturn(tab, second);
       }
 
-      if(isFour== true)
-      {
-          threeaddr = temp->address;
-          opcode += 1;
-          if (xbitset == true)
-          {
-              xbpe += 8;
-          }
-          if(rsub == true)
-          {
-              threeaddr = 0;
-          }
-          sprintf(finalstring,"T %06X 04 %02X %01X %05X", locctr, opcode, xbpe, 0); //locctr (6 hex) -> object code length (4 bytes, 2 hex) -> opcode(2 hex(with ni bits clipped into it)
-          strcpy(trec[trcount], finalstring);
-          trcount++;//(xbpe) -> 1 hex (address) -> 5 hex characters
-          strcpy(mrec[mrcount], generateMrec(locctr));
-      }
+
       //invalid symbol = we have a constant or an actual invalid symbol
-      if (temp == NULL) {
-          if (second[0] == 48 && second[1] == '\n') {
+      if (temp == NULL && rsub == false) {
+          if (strcmp("0", second) == 0) {
               threeaddr = 0; //test if the constant is a zero
               isConstant = true;
           }
@@ -898,10 +887,29 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
               }
           }
       }
-      else {
+      else if (rsub == false){
       symaddress = temp->address;
       base = temp->usesBase; //store base in here so we're not calling a null symbol
            }
+      if(isFour== true)
+      {
+          if(isConstant == false){
+              threeaddr = temp->address;
+          }
+          opcode += 1;
+          if (xbitset == true)
+          {
+              xbpe += 8;
+          }
+          if(rsub == true)
+          {
+              threeaddr = 0;
+          }
+          sprintf(finalstring,"T %06X 04 %02X %01X %05X", locctr, opcode, xbpe, threeaddr); //locctr (6 hex) -> object code length (4 bytes, 2 hex) -> opcode(2 hex(with ni bits clipped into it)
+          strcpy(trec[trcount], finalstring);
+          trcount++;//(xbpe) -> 1 hex (address) -> 5 hex characters
+          strcpy(mrec[mrcount], generateMrec(locctr));
+      }
         if(isConstant == true)
         {
             opcode += nibitadd;
@@ -915,7 +923,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
                 threeaddr = 0;
             }
             sprintf(finalstring,"T %06X 03 %02X %1X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
-                                                                                        //xbpe = 1 byte
+            printf("%s\n", finalstring);                                                                    //xbpe = 1 byte
             strcpy(trec[trcount], finalstring);
             trcount++;
         }
@@ -933,7 +941,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
                 threeaddr = 0;
             }
             sprintf(finalstring,"T %06X 03 %02X %1X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
-                                                                                    //xbpe = 1 byte
+            printf("%s\n", finalstring);                              //xbpe = 1 byte
             strcpy(trec[trcount], finalstring);
             trcount++;
         }
@@ -952,7 +960,8 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
             {
                 threeaddr = 0;
             }
-            sprintf(finalstring,"T %06X 03 %02X %1X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
+            sprintf(finalstring,"T %06X 03 %02X %1X %04X", locctr, opcode, xbpe, threeaddr);
+            printf("%s\n", finalstring);//location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
                                                                                         //xbpe = 1 byte
             strcpy(trec[trcount], finalstring);
             trcount++;
@@ -979,11 +988,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
             printLine(error);
             printf("Line %d ERROR: Assembler could not resolve this into PC-Relative or Base-relative addressing, consider using Format 4.\n", srcline);
             return 0;
-    }
-    if (temp == NULL) {
-      printLine(error);
-      printf("Line %d ERROR: Symbol not found!\n", srcline);
-      return 0;
+
     }
 
 
