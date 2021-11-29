@@ -862,6 +862,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
       printLine(error);
       printf("Line %d ERROR: Symbol not found!\n", srcline);
       return 0;
+
     }
     
     sprintf(finalstring,"T %06X03%02X%04X", locctr, opcode, temp->address);
