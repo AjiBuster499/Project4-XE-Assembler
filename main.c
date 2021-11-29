@@ -16,6 +16,8 @@ int addCtr(struct syminst tab[], char* symbol, char* tok3, unsigned int* ctr, ch
 void printTable(struct symbol* tab[]);
 void printLine(char* line);
 void arrayCopy(char line[], char clone[]);
+int findRegister(char* reg);
+char findChar(char* str);
 
 int main( int argc, char* argv[]) {
   struct syminst inst[INST_MAX];
@@ -69,7 +71,8 @@ int main( int argc, char* argv[]) {
 
 		//good manners to close your file with fclose
 		//read line by line until the end of the file
-		if (line[0] == 46) { // period, . aka comment
+      //had to readd # as comment bc the example program wouldn't compile, thought it was a symbol
+		if (line[0] == 46 || line[0] == 35) { // period, . aka comment
       linecount++;
       continue;
     }
@@ -82,7 +85,7 @@ int main( int argc, char* argv[]) {
 		if ((line[0] >= 65) && ( line[0]<= 90 )) { // capital letter
       newsym = strtok( line, " \t\n\r");
       newdir = strtok( NULL, " \t\n\r");
-      tok3 = strtok( NULL, "\t\n");
+      tok3 = strtok( NULL, " \t\n");
       casenum = IsAValidSymbol(newsym, symTab);
       switch(casenum) {
         case 1:
@@ -202,8 +205,12 @@ int main( int argc, char* argv[]) {
       if ((line[0] >= 65) && (line[0] <= 90)) {   //capital A-Z
         newsym = strtok(line, " \t\n\r");
         newdir = strtok(NULL, " \t\n\r");
-        tok3 = strtok(NULL, "\t\n");
-      
+        if(strcmp("BYTE", newdir) == 0) {
+            tok3 = strtok(NULL, "\t\n\r");
+        }
+        else{
+            tok3 = strtok(NULL, " \t\n\r");
+        }
         if (strcmp("RESB", newdir) == 0 ||
             strcmp("RESW", newdir) == 0 ||
             strcmp("START", newdir) == 0) {
@@ -238,7 +245,14 @@ int main( int argc, char* argv[]) {
 
       } else if (line[0] == '\t') {
         newsym = strtok(line, " \t\n\r");
-        newdir = strtok(NULL, " \t\n\r");
+        if(strcmp("BYTE", newsym) == 0)
+        {
+            newdir = strtok(NULL, "\t\n\r");
+        }
+        else
+        {
+              newdir = strtok(NULL, " \t\n\r");
+        }
 
         if (strcmp("RESB", newsym) == 0 ||
             strcmp("RESW", newsym) == 0 ||
@@ -352,7 +366,7 @@ void initInstructions(struct syminst tab[]) {
 int instructionExists(struct syminst insttab[], char *sname) {
   int result = 0;
   int index = 0;
-  for (index = 0; index < INST_MAX; index ++) {
+  for (index = 0; index < INST_MAX; index++) {
     if (strcmp(sname, insttab[index].iname) == 0) {
       result = -1;
       break;
@@ -583,8 +597,14 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
   bool base = false;
   bool isConstant = false;
   bool xbitset = false;
-  if(strcmp(first, "BYTE") == 0) {
-    if(second[0] == 'X') { //hexadecimal, initiate hex parsing procedure
+  bool rsub = false;
+  int r1 = 0;
+  int r2 = 0;
+  //opcode length 1
+  char e;
+  if(strcmp(first, "BYTE") == 0)
+  {
+      if(findChar(second) == 'X') { //hexadecimal, initiate hex parsing procedure
       strtok(second, "'");
       tempstring = strtok(NULL, "'");
      
@@ -597,7 +617,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
       trcount++;
      
       return 1;
-    } else if(second[0] == 'C') { //character, initiate character parsing procedure
+    } else if(findChar(second) == 'C') { //character, initiate character parsing procedure
       strtok(second,"'");
       tempstring = strtok(NULL,"'");
 
@@ -654,19 +674,91 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
         isFour = true;
         strtok(first, "+");
     }
+    opcode = returnOpcode(inst, first);
+  if((strcmp(first, "FIX") == 0)|| (strcmp(first, "FLOAT") == 0) || (strcmp(first, "HIO") == 0) || (strcmp(first, "NORM") == 0) ||
+          (strcmp(first, "SIO") == 0) || (strcmp(first, "TIO") == 0) )
+    {
+        sprintf(finalstring,"T %06X 01 %02X %01X", locctr, opcode, xbpe, temp->address);
+        strcpy(trec[trcount], finalstring);
+        trcount++;
+    }
+  //format 2
+  /*
+   *  r1, r2 are registers
+   *    each register gets *one* byte
+   *    byte length is 2
+   *    **LIST OF REGISTERS**
+   *    Register => Number
+   *    A => 0
+   *    X => 1
+   *    L => 2
+   *    B => 3
+   *    S => 4
+   *    T => 5
+   *    F => 6
+   *    PC => 8
+   *    SW => 9
+   */
+  if((strcmp(first, "CLEAR") == 0) || strcmp(first, "TIXR") == 0)
+    {
+        sym = strtok(second, " ,");
+        //indexing = r2
+        r1 = findRegister(sym);
+        r2 = 0;
+        if(r1 == -1)
+        {
+            printLine(error);
+            printf("Line %d ERROR: Invalid register!\n", srcline);
+            return 0;
+        }
+        sprintf(finalstring,"T %06X 02 %02X %01X %01X", locctr, opcode, r1, r2);
+    }
+  if((strcmp(first,"SHIFTL") == 0) || strcmp(first, "SHIFTR") == 0)
+    {
+        //sym = r1
+        sym = strtok(second, " ,");
+        //indexing = r2
+        r1 = findRegister(sym);
+        indexing = strtok(NULL, " ,");
+        // r2 = n in this case
+        r2 = atoi(indexing);
+        if((r1 == -1) || !((r2 >=0) && (r2 <= 15)))
+        {
+            printLine(error);
+            printf("Line %d ERROR: Invalid register or bit shift length! The max bit shift length should be 15!\n", srcline);
+            return 0;
+        }
+        sprintf(finalstring,"T %06X 02 %02X %01X %01X", locctr, opcode, r1, r2);
+    };
+  if((strcmp(first, "CLEAR") == 0) || (strcmp(first, "ADDR") == 0)|| (strcmp(first, "DIVR") == 0 ) || (strcmp(first, "MULR") == 0)
+     || (strcmp(first, "RMO") == 0) || (strcmp(first,"SUBR") == 0) )
+    {
+        //sym = r1
+        sym = strtok(second, " ,");
+        //indexing = r2
+        r1 = findRegister(sym);
+        indexing = strtok(NULL, " ,");
+        r2 = findRegister(indexing);
+        if((r1 == -1) || (r2 == -1))
+        {
+            printLine(error);
+            printf("Line %d ERROR: Invalid register!\n", srcline);
+            return 0;
+        }
+        sprintf(finalstring,"T %06X 02 %02X %01X %01X", locctr, opcode, r1, r2);
+    }
 
-  opcode = returnOpcode(inst, first);
-    if(strcmp("LDB", first)) //check for changes to base
+    if(strcmp("LDB", first) == 0) //check for changes to base
     {
         objbase = locctr;
     }
-  if(strcmp(first, "RSUB") == 0) {
+  /*if(strcmp(first, "RSUB") == 0) {
     sprintf(finalstring,"T %06X03%02X0000", locctr, opcode );
     strcpy(trec[trcount], finalstring);
     trcount++;
     strcpy(mrec[mrcount], generateMrec(locctr));
     return 1;
-  }
+  }*/
 
  /** if (strcmp("STCH", first) == 0 ||
       strcmp("LDCH", first) == 0) {
@@ -747,6 +839,10 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
           nibitadd = 1;
           strtok(second, "#");
       }
+      if (strcmp("RSUB", first) == 0)
+      {
+          rsub = true;
+      }
       if (strcmp("STCH", first) == 0 ||
           strcmp("LDCH", first) == 0)
         {
@@ -771,13 +867,19 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
 
       if(isFour== true)
       {
+          threeaddr = temp->address;
           opcode += 1;
           if (xbitset == true)
           {
               xbpe += 8;
           }
-          sprintf(finalstring,"T %06X 04 %02X %01X %05X", locctr, opcode, xbpe, temp->address); //locctr (6 hex) -> object code length (4 bytes, 2 hex) -> opcode(2 hex(with ni bits clipped into it)
-          strcpy(trec[trcount], finalstring);                                       //(xbpe) -> 1 hex (address) -> 5 hex characters
+          if(rsub == true)
+          {
+              threeaddr = 0;
+          }
+          sprintf(finalstring,"T %06X 04 %02X %01X %05X", locctr, opcode, xbpe, 0); //locctr (6 hex) -> object code length (4 bytes, 2 hex) -> opcode(2 hex(with ni bits clipped into it)
+          strcpy(trec[trcount], finalstring);
+          trcount++;//(xbpe) -> 1 hex (address) -> 5 hex characters
           strcpy(mrec[mrcount], generateMrec(locctr));
       }
       //invalid symbol = we have a constant or an actual invalid symbol
@@ -808,9 +910,14 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
             {
                 xbpe += 8;
             }
-            sprintf(finalstring,"T %06X 03 %1X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
+            if(rsub == true)
+            {
+                threeaddr = 0;
+            }
+            sprintf(finalstring,"T %06X 03 %02X %1X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
                                                                                         //xbpe = 1 byte
             strcpy(trec[trcount], finalstring);
+            trcount++;
         }
         else if ((locctr < symaddress) && ((symaddress - locctr) <= 0x2047) && (base == false) && (isConstant == false)) //positive 2047 PC relative
         {
@@ -821,9 +928,14 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
             {
                 xbpe += 8;
             }
-            sprintf(finalstring,"T %06X 03 %1X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
+            if(rsub == true)
+            {
+                threeaddr = 0;
+            }
+            sprintf(finalstring,"T %06X 03 %02X %1X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
                                                                                     //xbpe = 1 byte
             strcpy(trec[trcount], finalstring);
+            trcount++;
         }
         else if ((locctr > symaddress) && ((locctr - symaddress) <= 0x2048) && (base == false) && (isConstant == false)) //more than -2047 PC relative backwards
         {
@@ -836,9 +948,14 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
             {
                 xbpe += 8;
             }
-            sprintf(finalstring,"T %06X 03 %1X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
+            if(rsub == true)
+            {
+                threeaddr = 0;
+            }
+            sprintf(finalstring,"T %06X 03 %02X %1X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
                                                                                         //xbpe = 1 byte
             strcpy(trec[trcount], finalstring);
+            trcount++;
         }
         else if((((objbase - init.address) >= 0) && ((objbase - init.address) <= 4095 )))//base relative
         {
@@ -849,8 +966,13 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
             {
                 xbpe += 8;
             }
-            sprintf(finalstring,"T %06X 03 %02X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
+            if(rsub == true)
+            {
+                threeaddr = 0;
+            }
+            sprintf(finalstring,"T %06X 03 %02X %01X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
             strcpy(trec[trcount], finalstring);
+            trcount++;
         }
     //consider format 4 error
         else{
@@ -863,13 +985,9 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
       printf("Line %d ERROR: Symbol not found!\n", srcline);
       return 0;
     }
-    
-    sprintf(finalstring,"T %06X03%02X%04X", locctr, opcode, temp->address);
+
 
   }
-
-  strcpy(trec[trcount], finalstring);
-  trcount++;
 
   return 1;
 }
@@ -887,6 +1005,77 @@ int returnOpcode(struct syminst insttab[], char *sname) {
   return -1;
 }
 
+//this function will find the register number based on the given letter
+//format 2
+/*
+ *  r1, r2 are registers
+ *    each register gets *one* byte
+ *    byte length is 2
+ *    **LIST OF REGISTERS**
+ *    Register => Number
+ *    A => 0
+ *    X => 1
+ *    L => 2
+ *    B => 3
+ *    S => 4
+ *    T => 5
+ *    F => 6
+ *    PC => 8
+ *    SW => 9
+ */
+int findRegister(char* reg){
+    if (reg[1] != '\0')
+    {
+        //either invalid or PC/SW
+        if(strcmp(reg, "PC") == 0)
+        {
+            return 8;
+        }
+        else if(strcmp(reg,"SW") == 0)
+        {
+            return 9;
+        }
+        return -1;
+    }
+    else if(reg[0] == 'A')
+    {
+        return 0;
+    }
+    else if(reg[0] == 'X')
+    {
+        return 1;
+    }
+    else if(reg[0] == 'L')
+    {
+        return 2;
+    }
+    else if(reg[0] == 'B')
+    {
+        return 3;
+    }
+    else if(reg[0] == 'B')
+    {
+        return 3;
+    }
+    else if(reg[0] == 'S')
+    {
+        return 4;
+    }
+    else if(reg[0] == 'T')
+    {
+        return 5;
+    }
+    else if(reg[0] == 'F')
+    {
+        return 6;
+    }
+    else
+    {
+        //invalid one letter register
+        return -1;
+    }
+
+};
 //this function will generate a modification record
 /**
  this function will generate a M record
@@ -901,6 +1090,21 @@ char* generateMrec(int ctr) {
   mrcount++;
 
   return result;
+}
+//find a character so we don't deal with leading white spaces
+char findChar(char* str)
+{
+    int count = 0;
+    while (count <= strlen(str)) {
+        if(str[count] == ' ' || str[count] == '\t')
+        {
+            count++;
+            continue;
+        }
+        else {
+            return str[count];
+        }
+    }
 }
 int createFile(FILE* fp, char trec[][71], char mrec[][71], char* header, char* end) {
   fprintf(fp, "%s\n", header);
