@@ -31,6 +31,7 @@ void addSymbol(struct symbol* tab[], unsigned int* addr, int src, char* sName) {
     newSym = malloc(sizeof (struct symbol));
     newSym->address = *addr;
     newSym->sourceLine = src;
+    newSym->usesBase = false;
     strcpy(newSym->name,sName);
     
     while(tab[index] != NULL) {
@@ -70,6 +71,21 @@ struct symbol* symbolReturn(struct symbol* tab[], char *sname) {
       index++;
     }
     return result;
+}
+int symbolIndex(struct symbol* tab[], char *sname) {
+    struct symbol* result = NULL;
+    strtok(sname, " ");
+    char* sym;
+    int index = 0;
+    while(tab[index] != NULL) {
+        sym = tab[index]->name;
+        if(strcmp(sname, sym) == 0) {
+            result = tab[index];
+            break;
+        }
+        index++;
+    }
+    return index;
 }
 
 int checkspecial(char* symbol) {

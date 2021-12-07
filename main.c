@@ -6,7 +6,7 @@ int trcount = 0;
 struct symbol init; //this is for seeing what the start symbol is
 int objbase; //need to find the base at each moment
 int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int locctr, char error[], int srcline,
-                 char trec[][71], char mrec[][71], struct syminst inst[]);
+                 char trec[][71], char mrec[][71], struct syminst inst[], struct countertrack* tracker[]);
 int createFile(FILE* fp, char trec[][71], char mrec[][71], char* header, char* end);
 char* generateMrec(int ctr);
 void initInstructions(struct syminst tab[]);
@@ -18,6 +18,7 @@ void printLine(char* line);
 void arrayCopy(char line[], char clone[]);
 int findRegister(char* reg);
 char findChar(char* str);
+int findNextValid(struct countertrack* tab[], int line);
 
 int main( int argc, char* argv[]) {
   struct syminst inst[INST_MAX];
@@ -85,7 +86,7 @@ int main( int argc, char* argv[]) {
 		if ((line[0] >= 65) && ( line[0]<= 90 )) { // capital letter
       newsym = strtok( line, " \t\n\r");
       newdir = strtok( NULL, " \t\n\r");
-      tok3 = strtok( NULL, " \t\n");
+      tok3 = strtok( NULL, "\t\n");
       casenum = IsAValidSymbol(newsym, symTab);
       switch(casenum) {
         case 1:
@@ -124,6 +125,7 @@ int main( int argc, char* argv[]) {
         }
         pcount[linecount]->line = linecount;
         pcount[linecount]->counter = *start;
+        pcount[linecount]->valid = true;
         addSymbol(symTab, start, linecount, newsym);
         linecount++;
         strcpy(init.name, newsym);
@@ -132,11 +134,12 @@ int main( int argc, char* argv[]) {
       }
       pcount[linecount]->line = linecount;
       pcount[linecount]->counter = *start;
+      pcount[linecount]->valid = true;
       prev = *start;
       addSymbol(symTab, start, linecount, newsym);
-      if (strcmp("END", newdir) == 0) { // hit end of file
+      /*if (strcmp("END", newdir) == 0) { // hit end of file
         break;
-      }
+      }*/
       if (addCtr(inst, newdir, tok3, start, lclone, linecount) == 0) {
         fclose(fp);
         return 0;
@@ -144,16 +147,18 @@ int main( int argc, char* argv[]) {
 
     } else if((line[0] == '\t') || line[0] == ' ' ) { // non-symbol assembly line
       newsym = strtok( line, " \t\n\r");
-      newdir = strtok( NULL, " \t\n\r");
+      newdir = strtok( NULL, "\t\n\r");
 
       if (strcmp( "START", newsym) == 0) {
        sscanf(tok3, "%x", start);
         pcount[linecount]->line = linecount;
         pcount[linecount]->counter = *start;
+        pcount[linecount]->valid = true;
       }
 
       pcount[linecount]->line = linecount;
       pcount[linecount]->counter = *start;
+      pcount[linecount]->valid = true;
       prev = *start;
 
       if(addCtr(inst, newsym, newdir, start, lclone, linecount) == 0) {
@@ -233,10 +238,23 @@ int main( int argc, char* argv[]) {
           linecount2++;
           continue;
         }
-
-        ctratline = pcount[linecount2]->counter;
+          if (strcmp("BASE", newdir) == 0)
+          {
+              int a = symbolIndex(symTab, tok3);
+              symTab[a]->usesBase = true;
+              linecount2++;
+              continue;
+          }
+          else if (strcmp("NOBASE", newdir) == 0)
+          {
+              int a = symbolIndex(symTab, tok3);
+              symTab[a]->usesBase = false;
+              linecount2++;
+              continue;
+          }
+        ctratline = findNextValid(pcount, linecount2);
       
-        if (generateTrec(newdir, tok3, symTab, ctratline, lclone, linecount2, trecord, mrecord, inst) == 0) {
+        if (generateTrec(newdir, tok3, symTab, ctratline, lclone, linecount2, trecord, mrecord, inst, pcount) == 0) {
           fclose(fp);
           return 0;
         } else {
@@ -253,7 +271,20 @@ int main( int argc, char* argv[]) {
         {
               newdir = strtok(NULL, " \t\n\r");
         }
-
+          if (strcmp("BASE", newsym) == 0)
+          {
+              int a = symbolIndex(symTab, newdir);
+              symTab[a]->usesBase = true;
+              linecount2++;
+              continue;
+          }
+          else if (strcmp("NOBASE", newsym) == 0)
+          {
+              int a = symbolIndex(symTab, tok3);
+              symTab[a]->usesBase = false;
+              linecount2++;
+              continue;
+          }
         if (strcmp("RESB", newsym) == 0 ||
             strcmp("RESW", newsym) == 0 ||
             strcmp("START", newsym) == 0) {
@@ -274,9 +305,9 @@ int main( int argc, char* argv[]) {
           continue;
         }
 
-        ctratline = pcount[linecount2]->counter;
+        ctratline = findNextValid(pcount, linecount2);
 
-        if (generateTrec(newsym, newdir, symTab, ctratline, lclone, linecount2, trecord, mrecord, inst) == 0) {
+        if (generateTrec(newsym, newdir, symTab, ctratline, lclone, linecount2, trecord, mrecord, inst, pcount) == 0) {
           fclose(fp);
           return 0;
         } else {
@@ -375,7 +406,18 @@ int instructionExists(struct syminst insttab[], char *sname) {
 
   return result;
 }
-
+int findNextValid(struct countertrack* tab[], int line)
+{
+    line += 1;
+    for(line; line < 1024 ; line++)
+    {
+        if(tab[line]->valid == true)
+        {
+            return tab[line]->counter;
+        }
+    }
+    return -1;
+}
 int addCtr(struct syminst tab[], char* symbol, char* tok3, unsigned int* ctr, char line[], int srcline) {
   int temp = 0;
   unsigned int hextemp = 0;
@@ -500,7 +542,13 @@ int addCtr(struct syminst tab[], char* symbol, char* tok3, unsigned int* ctr, ch
       printf("Line %d ERROR: Word being stored is larger than SIC max! Maximum size for SIC is 8388608 in either direction!\n", srcline);
       return 0;
     }
-  } else if (strcmp("END", symbol) == 0) {
+
+  }
+  else if (strcmp("BASE", symbol) == 0)
+  {
+    return 1;
+  }
+  else if (strcmp("END", symbol) == 0) {
     if (*ctr + 3 <= 0x10000) {
       *ctr += 3;
       return 1;
@@ -517,7 +565,9 @@ int addCtr(struct syminst tab[], char* symbol, char* tok3, unsigned int* ctr, ch
 
   return 1;
 }
-
+/**
+ * Prints the symbol table out given a symbol table.
+ */
 void printTable(struct symbol* tab[]) {
   int index = 0;
 
@@ -529,7 +579,9 @@ void printTable(struct symbol* tab[]) {
     index++;
   }
 }
-
+/*
+ * prints the line
+ */
 void printLine(char* line) {
   printf("%s", line);
 }
@@ -539,7 +591,10 @@ void arrayCopy(char line[], char clone[]) {
     clone[x] = line[x];
   }
 }
-
+/**
+ * This function checks the validity of hex numbers to make sure they are real hex numbers.
+ *
+ */
 int validHex(char* string) {
   int index = 0;
   while(string[index] != '\0') {
@@ -566,7 +621,7 @@ int validHex(char* string) {
        mrecord table
 */
 int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int locctr, char error[], int srcline,
-                 char trec[][71], char mrec[][71], struct syminst inst[])
+                 char trec[][71], char mrec[][71], struct syminst inst[], struct countertrack* tracker[])
 {
   unsigned int hextemp = 0;
   int word = 0;
@@ -574,7 +629,8 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
 
   struct symbol* temp;
   temp = malloc(sizeof(struct symbol*));
-
+  int curr = tracker[srcline]->counter; //different from locctr, this keeps track of the counter before the current instruction versus the counter with the
+                                          //instruction
   char* tempstring;
   char* hexparse;
 
@@ -611,7 +667,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
       sscanf(tempstring, "%X", &hextemp);
       opcode = strlen(tempstring);
      
-      sprintf(finalstring, "T %06X%02X%06X", locctr,opcode, hextemp );
+      sprintf(finalstring, "T%06X%02X%06X", curr, opcode, hextemp );
       strcpy(trec[trcount], finalstring);
      
       trcount++;
@@ -635,7 +691,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
         } else {
           memused = 30;
         }
-        sprintf(finalstring, "T %06X%02X", locctr, memused);
+        sprintf(finalstring, "T%06X%02X", curr, memused);
         
         if(memused < 3) {
           if (memused == 2) {
@@ -663,7 +719,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
   }
   if(strcmp(first, "WORD") == 0) {
     word = atoi(second);
-    sprintf(finalstring, "T %06X03%06X", locctr, word);
+    sprintf(finalstring, "T %06X03%06X", curr, word);
     strcpy(trec[trcount], finalstring);
     trcount++;
     return 1;
@@ -678,7 +734,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
   if((strcmp(first, "FIX") == 0)|| (strcmp(first, "FLOAT") == 0) || (strcmp(first, "HIO") == 0) || (strcmp(first, "NORM") == 0) ||
           (strcmp(first, "SIO") == 0) || (strcmp(first, "TIO") == 0) )
     {
-        sprintf(finalstring,"T %06X 01 %02X", locctr, opcode);
+        sprintf(finalstring,"T %06X 01 %02X", curr, opcode);
         strcpy(trec[trcount], finalstring);
         trcount++;
     }
@@ -699,7 +755,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
    *    PC => 8
    *    SW => 9
    */
-  if((strcmp(first, "CLEAR") == 0) || strcmp(first, "TIXR") == 0)
+  if((strcmp(first, "CLEAR") == 0) || (strcmp(first, "TIXR") == 0))
     {
         sym = strtok(second, " ,");
         //indexing = r2
@@ -711,7 +767,9 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
             printf("Line %d ERROR: Invalid register!\n", srcline);
             return 0;
         }
-        sprintf(finalstring,"T %06X 02 %02X %01X %01X", locctr, opcode, r1, r2);
+        sprintf(finalstring,"T%06X02%02X%01X%01X", curr, opcode, r1, r2);
+        strcpy(trec[trcount], finalstring);
+        trcount++;
         return 1;
     }
   if((strcmp(first,"SHIFTL") == 0) || strcmp(first, "SHIFTR") == 0)
@@ -729,7 +787,10 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
             printf("Line %d ERROR: Invalid register or bit shift length! The max bit shift length should be 15!\n", srcline);
             return 0;
         }
-        sprintf(finalstring,"T %06X 02 %02X %01X %01X", locctr, opcode, r1, r2);
+        sprintf(finalstring,"T%06X02%02X%01X%01X", curr, opcode, r1, r2);
+        strcpy(trec[trcount], finalstring);
+        trcount++;
+        return 1;
     };
   if((strcmp(first, "ADDR") == 0)|| (strcmp(first, "DIVR") == 0 ) || (strcmp(first, "MULR") == 0)
      || (strcmp(first, "RMO") == 0) || (strcmp(first,"SUBR") == 0) || strcmp(first, "COMPR") == 0)
@@ -746,70 +807,14 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
             printf("Line %d ERROR: Invalid register!\n", srcline);
             return 0;
         }
-        sprintf(finalstring,"T %06X 02 %02X %01X %01X", locctr, opcode, r1, r2);
+        sprintf(finalstring,"T%06X02%02X%01X%01X", curr, opcode, r1, r2);
         strcpy(trec[trcount], finalstring);
         trcount++;
         return 1;
     }
 
-    if(strcmp("LDB", first) == 0) //check for changes to base
-    {
-        objbase = locctr;
-    }
-  /*if(strcmp(first, "RSUB") == 0) {
-    sprintf(finalstring,"T %06X03%02X0000", locctr, opcode );
-    strcpy(trec[trcount], finalstring);
-    trcount++;
-    strcpy(mrec[mrcount], generateMrec(locctr));
-    return 1;
-  }*/
 
- /** if (strcmp("STCH", first) == 0 ||
-      strcmp("LDCH", first) == 0) {
-    sym = strtok(second, " ,");
-    indexing = strtok(NULL, " ,");
 
-    if (indexing == NULL) {
-      temp = symbolReturn(tab,second);
-      
-      if (temp == NULL) {
-        printLine(error);
-        printf("Line %d ERROR: Symbol not found!\n", srcline);
-        return 0;
-      }
-
-      sprintf(finalstring,"T %06X03%02X%04X", locctr, opcode, temp->address);
-      
-      strcpy(trec[trcount], finalstring);
-      strcpy(mrec[mrcount], generateMrec(locctr));
-      
-      trcount++;
-      
-      return 1;
-    } else if (*indexing == 'X') {
-      temp = symbolReturn(tab,sym);
-      
-      if(temp == NULL) {
-        return 1;
-      }
-      
-      hextemp = temp->address;
-      hextemp |= 1 << 15;
-      
-      sprintf(finalstring,"T %06X03%02X%04X", locctr, opcode, hextemp);
-      strcpy(trec[trcount], finalstring);
-      
-      trcount++;
-      strcpy(mrec[mrcount], generateMrec(locctr));
-
-      return 1;
-    } else {
-      printLine(error);
-      printf("Line %d ERROR: Invalid addressing mode!\n", srcline);
-      return 0;
-    }
-  }
-  */
   if (opcode == -1) {
     printLine(error);
     printf("Line %d ERROR: Could not find instruction!\n", srcline);
@@ -838,8 +843,9 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
       if (strcmp("RSUB", first) == 0) {
           rsub = true;
       }
+
       if (rsub == false) {
-          if (second[0] == 64) //#
+          if (second[0] == 64) //@
           {
               nibitadd = 2;
               second = strtok(second, "@");
@@ -888,15 +894,27 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
           }
       }
       else if (rsub == false){
-      symaddress = temp->address;
+          symaddress = temp->address;
       base = temp->usesBase; //store base in here so we're not calling a null symbol
            }
+      if(strcmp("LDB", first) == 0) //check for changes to base
+      {
+          int newbase;
+          if(isConstant == false)
+          {
+              newbase = temp->address;
+          }
+          else{
+              newbase = threeaddr;
+          }
+          objbase = newbase;
+      }
       if(isFour== true)
       {
           if(isConstant == false){
               threeaddr = temp->address;
           }
-          opcode += 1;
+          opcode += nibitadd;;
           if (xbitset == true)
           {
               xbpe += 8;
@@ -905,10 +923,14 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
           {
               threeaddr = 0;
           }
-          sprintf(finalstring,"T %06X 04 %02X %01X %05X", locctr, opcode, xbpe, threeaddr); //locctr (6 hex) -> object code length (4 bytes, 2 hex) -> opcode(2 hex(with ni bits clipped into it)
+          xbpe += 1; //rightmost bit set to 1
+          sprintf(finalstring,"T%06X04%02X%01X%05X", curr, opcode, xbpe, threeaddr); //curr (6 hex) -> object code length (4 bytes, 2 hex) -> opcode(2 hex(with ni bits clipped into it)
           strcpy(trec[trcount], finalstring);
-          trcount++;//(xbpe) -> 1 hex (address) -> 5 hex characters
-          strcpy(mrec[mrcount], generateMrec(locctr));
+          if(isConstant == false) {
+              trcount++;//(xbpe) -> 1 hex (address) -> 5 hex characters
+              strcpy(mrec[mrcount], generateMrec(curr));
+          }
+          return 1;
       }
         if(isConstant == true)
         {
@@ -922,14 +944,35 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
             {
                 threeaddr = 0;
             }
-            sprintf(finalstring,"T %06X 03 %02X %1X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
-            printf("%s\n", finalstring);                                                                    //xbpe = 1 byte
+            sprintf(finalstring,"T%06X03%02X%1X%03X", curr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
+                                                                                               //xbpe = 1 byte
             strcpy(trec[trcount], finalstring);
             trcount++;
         }
-        else if ((locctr < symaddress) && ((symaddress - locctr) <= 0x2047) && (base == false) && (isConstant == false)) //positive 2047 PC relative
+        else if (((locctr < symaddress) && (((symaddress - locctr) <= 2047 ) && ((symaddress - locctr) >= 0)) && (base == false) && (isConstant == false)) || (rsub == true )) //positive 2047 PC relative
         {
             threeaddr = symaddress - locctr;
+            opcode += nibitadd;
+            xbpe += 2; //second to last bit turned on
+            if (xbitset == true)
+            {
+                xbpe += 8;
+            }
+            if(rsub == true)
+            {
+                threeaddr = 0;
+                xbpe = 0;
+            }
+            sprintf(finalstring,"T%06X03%02X%1X%03X", curr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
+                                                                                    //xbpe = 1 byte
+            strcpy(trec[trcount], finalstring);
+            trcount++;
+        }
+        else if ((locctr > symaddress) && (((locctr - symaddress) > 0 ) && ((locctr - symaddress) <= 2048)) && (base == false) && (isConstant == false)) //more than -2047 PC relative backwards
+        {
+            threeaddr = curr - symaddress;
+            threeaddr = (~threeaddr) + 1; // twos complement
+            threeaddr = threeaddr & 0x00000FFF; //AND makes sure that we only have the bits we need, everything else stays the same
             opcode += nibitadd;
             xbpe += 2;
             if (xbitset == true)
@@ -940,18 +983,18 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
             {
                 threeaddr = 0;
             }
-            sprintf(finalstring,"T %06X 03 %02X %1X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
-            printf("%s\n", finalstring);                              //xbpe = 1 byte
+            sprintf(finalstring,"T%06X03%02X%1X%03X", curr, opcode, xbpe, threeaddr);
+            //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
+            //xbpe = 1 byte
             strcpy(trec[trcount], finalstring);
             trcount++;
         }
-        else if ((locctr > symaddress) && ((locctr - symaddress) <= 0x2048) && (base == false) && (isConstant == false)) //more than -2047 PC relative backwards
+        else if((objbase <= symaddress) && ((symaddress - objbase <= 4095 ) && ((symaddress - objbase) >= 0)))//base relative
         {
-            threeaddr = locctr - symaddress;
-            threeaddr = (~threeaddr) + 1;
-            threeaddr = threeaddr & 0x0000FFFF; //AND makes sure that we only have the bits we need, everything else stays the same
-            opcode += nibitadd;
-            xbpe += 4;
+            //base address is less than the address of the requested symbol + symbol is in the range of 4096 and 0
+            threeaddr = symaddress - objbase;
+            opcode += nibitadd; //add to the opcode
+            xbpe += 4;  // +4 for format four object code
             if (xbitset == true)
             {
                 xbpe += 8;
@@ -960,26 +1003,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
             {
                 threeaddr = 0;
             }
-            sprintf(finalstring,"T %06X 03 %02X %1X %04X", locctr, opcode, xbpe, threeaddr);
-            printf("%s\n", finalstring);//location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
-                                                                                        //xbpe = 1 byte
-            strcpy(trec[trcount], finalstring);
-            trcount++;
-        }
-        else if((((objbase - init.address) >= 0) && ((objbase - init.address) <= 4095 )))//base relative
-        {
-            threeaddr = objbase - init.address;
-            opcode += nibitadd;
-            xbpe += 1;
-            if (xbitset == true)
-            {
-                xbpe += 8;
-            }
-            if(rsub == true)
-            {
-                threeaddr = 0;
-            }
-            sprintf(finalstring,"T %06X 03 %02X %01X %04X", locctr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
+            sprintf(finalstring,"T%06X03%02X%01X%03X", curr, opcode, xbpe, threeaddr); //location counter -> object code length (3 bytes) -> opcode (ni bits clip into it)
             strcpy(trec[trcount], finalstring);
             trcount++;
         }
@@ -1091,7 +1115,7 @@ int findRegister(char* reg){
 char* generateMrec(int ctr) {
   char* result;
   result = malloc(sizeof(char*));
-  sprintf(result,"M%06X04+%s",ctr+1, init.name);
+  sprintf(result,"M%06X05+%s",ctr+1, init.name);
   mrcount++;
 
   return result;
