@@ -2,24 +2,42 @@
 #include <math.h>
 int main(void) 
 {
-  char input[] = "0.6";
+  char input[] = "1.0";
   int whole;
   int dec;
+  int deci;
+  int digits = 1;
   
   int count = 0;
   int divisor =1;
   long sum = 0;
 
   int bias = 1023;
-  
   int exponent;
-  int fraction;
+  
 
   long output = 0;
 
-  sscanf(input, "%d.%d", &whole, &dec);
+  sscanf(input, "%d.%d", &whole, &deci);
   printf("%d\n", whole);
-  printf("%d\n", dec);
+  printf("%d\n", deci);
+  dec = deci;
+
+  if(whole == 0 && deci == 0)
+  {
+    printf("output = 0\n");
+    return 0;
+  }
+  if (dec >= 10)
+  {
+    do
+    {
+      dec = dec - (dec * pow(10,digits));
+      ++digits;
+    }while(dec > 0);
+  }
+  printf("digits = %d\n",digits);
+  dec = deci;
   if(whole < 0)
   {
     output = output + 140737488355328;
@@ -40,18 +58,18 @@ int main(void)
     output = output + ((whole - pow(2,count-1)) * pow(2, 36-(count-1)));
     for(int i = 36-(count-1); i > 0; i--)
     {
-      if(dec * 2 < 10)
+      if(dec * 2 < pow(10,digits))
       {
         dec = dec * 2;
         continue;
       }
-      if(dec * 2 > 10)
+      if(dec * 2 > pow(10,digits))
       {
-        dec = (dec *2) - 10;
+        dec = (dec *2) - pow(10,digits);
         sum = sum + pow(2,i-1);
         continue;
       }
-      if(dec * 2 == 10)
+      if(dec * 2 == pow(10,digits))
       {
         sum = sum + pow(2,i-1);
         break;
@@ -66,18 +84,18 @@ int main(void)
     output = output + (bias * pow(2,36));
     for(int i = 36; i > 0; i--)
     {
-      if(dec * 2 < 10)
+      if(dec * 2 < pow(10,digits))
       {
         dec = dec * 2;
         continue;
       }
-      if(dec * 2 > 10)
+      if(dec * 2 > pow(10,digits))
       {
-        dec = (dec *2) - 10;
+        dec = (dec *2) - pow(10,digits);
         sum = sum + pow(2,i-1);
         continue;
       }
-      if(dec * 2 == 10)
+      if(dec * 2 == pow(10,digits))
       {
         sum = sum + pow(2,i-1);
         break;
@@ -87,54 +105,78 @@ int main(void)
   }
   else if(whole == 0)
   {
-    for(int i = 36; i > 0; i--)
+    for(int i = 36; i > 0; i--)//sets count
     {
       count = count + 1;
-      if(dec * 2 < 10)
+      if(dec * 2 < pow(10,digits))
       {
         dec = dec * 2;
         continue;
       }
-      if(dec * 2 > 10)
+      if(dec * 2 > pow(10,digits))
       {
         break;
       }
-      if(dec * 2 == 10)
+      if(dec * 2 == pow(10,digits))
       {
         
         break;
       }
     }
     printf("count = %d\n",count);
-    output = output + ((bias - count) * pow(2,36));
-    int tempcount = count;
-    for(int i = 36 + (count - 1); i > 0; i--)
+    output = output + ((bias - count) * pow(2,36));//adds 11bit exponent into the output
+    dec = deci;
+    for(int i = 36; i > 0; i--)
     {
-      if(dec * 2 < 10)
+      if(dec * 2 < pow(10,digits))
       {
         
         dec = dec * 2;
-        tempcount = tempcount -1;
         continue;
       }
-      if(dec * 2 > 10)
+      if(dec * 2 > pow(10,digits))
       {
-        dec = (dec *2) - 10;
-        if(tempcount <= 0)
-        {
-          sum = sum + pow(2,i-1);
-        }
-        tempcount = tempcount - 1;
+        dec = (dec *2) - pow(10,digits);
+        sum = sum + pow(2,i-1);
         continue;
       }
-      if(dec * 2 == 10)
+      if(dec * 2 == pow(10,digits))
       {
+        dec = 0;
+        sum = sum + pow(2,i-1);
         output = output + 34359738368;
-        break;
+        printf("%ld", output);
+        return output;
       }
     }
-    output = output + sum;
+    printf("%ld\n",sum);
+    sum = sum - pow(2,36 - count);
+    sum = sum * pow(2,count);
   }
+  for(int i = count ; i > 0; i--)
+  {
+    if(dec * 2 < pow(10,digits))
+      {
+        
+        dec = dec * 2;
+        continue;
+      }
+      if(dec * 2 > pow(10,digits))
+      {
+        dec = (dec *2) - pow(10,digits);
+        sum = sum + pow(2,i-1);
+        continue;
+      }
+      if(dec * 2 == pow(10,digits))
+      {
+        dec = 0;
+        sum = sum + pow(2,i-1);
+        output = output + 34359738368;
+        printf("%ld", output);
+        return output;
+      }
+  }
+  output = output + sum;
 printf("%ld",output);
   return 0;
 }
