@@ -426,11 +426,11 @@ int instructionExists(struct syminst insttab[], char *sname) {
 int findNextValid(struct countertrack* tab[], int line)
 {
     line += 1;
-    for(int i = line; line < 1024 ; line++)
+    for(int i = line; i < 1024 ; i++)
     {
-        if(tab[line]->valid == true)
+        if(tab[i]->valid == true)
         {
-            return tab[line]->counter;
+            return tab[i]->counter;
         }
     }
     return -1;
