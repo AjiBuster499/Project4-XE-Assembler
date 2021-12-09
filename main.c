@@ -49,6 +49,12 @@ int main( int argc, char* argv[]) {
 		return 0;
   }
 
+  char fileName[] = strcpy(fileName, argv[1]);
+  if (strstr(fileName, ".sic") == NULL ||
+      strstr(fileName, ".sicxe") == NULL) {
+        printf("ERROR: File is not a SIC or SICXE assembly file!\n");
+        return 0;
+  }
 	fp = fopen( argv[1], "r");
 	if (fp == NULL ) {
 	  printf("ERROR: %s could not be opened for reading,\n", argv[1] );
@@ -853,7 +859,6 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
   short nibitadd = 3;
   int symaddress = 0;
   int xbpe = 0;
-  int signedthreeaddr = 0;
   unsigned int threeaddr = 0;
   bool base = false;
   bool isConstant = false;
@@ -862,7 +867,6 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
   int r1 = 0;
   int r2 = 0;
   //opcode length 1
-  char e;
   if(strcmp(first, "BYTE") == 0)
   {
       if(findChar(second) == 'X') { //hexadecimal, initiate hex parsing procedure
