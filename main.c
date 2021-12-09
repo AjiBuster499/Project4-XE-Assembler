@@ -1052,7 +1052,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
          */
   else {
       //ni are = 3, first two bits are set to 1
-      if (strcmp("RSUB", first) == 0) {
+      if (strcmp("RSUB", first) == 0 || ((strcmp("TIX", first) == 0) && second == NULL)) {
           rsub = true;
       }
 
@@ -1061,7 +1061,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
           {
               nibitadd = 2;
               second = strtok(second, "@");
-          } else if (second[0] == 35) {
+          } else if (second[0] == 35 && second != NULL) {
               nibitadd = 1;
               second = strtok(second, "#");
           }
