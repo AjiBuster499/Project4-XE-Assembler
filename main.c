@@ -86,7 +86,12 @@ int main( int argc, char* argv[]) {
 		if ((line[0] >= 65) && ( line[0]<= 90 )) { // capital letter
       newsym = strtok( line, " \t\n\r");
       newdir = strtok( NULL, " \t\n\r");
-      tok3 = strtok( NULL, "\t\n");
+      if(strcmp("BYTE", newdir) == 0) {
+          tok3 = strtok(NULL, "\t\n\r");
+      }
+      else{
+          tok3 = strtok(NULL, " \t\n\r");
+      }
       casenum = IsAValidSymbol(newsym, symTab);
       switch(casenum) {
         case 1:
@@ -137,9 +142,9 @@ int main( int argc, char* argv[]) {
       pcount[linecount]->valid = true;
       prev = *start;
       addSymbol(symTab, start, linecount, newsym);
-      /*if (strcmp("END", newdir) == 0) { // hit end of file
+      if (strcmp("END", newdir) == 0) { // hit end of file
         break;
-      }*/
+      }
       if (addCtr(inst, newdir, tok3, start, lclone, linecount) == 0) {
         fclose(fp);
         return 0;
@@ -497,7 +502,7 @@ int addCtr(struct syminst tab[], char* symbol, char* tok3, unsigned int* ctr, ch
       return 0;
     }
   } else if (strcmp("BYTE", symbol) == 0) {
-    if (tok3[0] == 'X') { //hexadecimal, initiate hex parsing procedure
+    if (findChar(tok3) == 'X') { //hexadecimal, initiate hex parsing procedure
       strtok(tok3, "'");
       constant = strtok(NULL, "'");
 
@@ -515,7 +520,7 @@ int addCtr(struct syminst tab[], char* symbol, char* tok3, unsigned int* ctr, ch
         printf("Line %d ERROR: Odd hex values are not within SIC specification! Please pad your hex values with a 0.\n", srcline);
         return 0;
       }
-    } else if (tok3[0] == 'C') { //character, initiate character parsing procedure
+    } else if (findChar(tok3) == 'C') { //character, initiate character parsing procedure
       strtok(tok3,"'");
       constant = strtok(NULL,"'");
       temp = strlen(constant);
@@ -615,15 +620,13 @@ long genFloat(char* input)
     long output = 0;
 
     sscanf(input, "%d.%d", &whole, &deci);
-    printf("%d\n", whole);
-    printf("%d\n", deci);
     dec = deci;
 
     if(whole == 0 && deci == 0)
     {
-        printf("output = 0\n");
-        return 0;
+        return 0;//this will return zero when the input is 0.0
     }
+    //this calculates the number of digits of the whole number if it is more than 1
     if (dec >= 10)
     {
         do
@@ -632,14 +635,16 @@ long genFloat(char* input)
             ++digits;
         }while(dec > 0);
     }
-    printf("digits = %d\n",digits);
+
     dec = deci;
+    //this sets the first bit to 1 if the number is negative
     if(whole < 0)
     {
         output = output + 140737488355328;
         whole = whole * -1;
     }
-    if(whole >= 1)
+    //calculates output for numbers with an absolute value that is >= 2
+    if(whole > 1)
     {
 
         while(whole >= divisor)
@@ -648,11 +653,13 @@ long genFloat(char* input)
             divisor = divisor * 2;
 
         }
-        printf("%d\n",count);
-        exponent = bias + (count - 1);
+        count = count - 1;
+        exponent = bias + (count);
         output = output + (exponent * pow(2,36));
-        output = output + ((whole - pow(2,count-1)) * pow(2, 36-(count-1)));
-        for(int i = 36-(count-1); i > 0; i--)
+        output = output + ((whole - pow(2,count)) * pow(2, 36-(count)));//adds the remainder of the whole number to the 36bit section
+
+        //calculates the value of the decimal
+        for(int i = 35 - count; i >= 0; i--)
         {
             if(dec * 2 < pow(10,digits))
             {
@@ -662,22 +669,24 @@ long genFloat(char* input)
             if(dec * 2 > pow(10,digits))
             {
                 dec = (dec *2) - pow(10,digits);
-                sum = sum + pow(2,i-1);
+                sum = sum + pow(2,i);
                 continue;
             }
             if(dec * 2 == pow(10,digits))
             {
-                sum = sum + pow(2,i-1);
+                sum = sum + pow(2,i);
                 break;
             }
 
         }
-        printf("%ld\n",sum);
         output = output + sum;
     }
+        //calculates output for numbers with an absolute value between 1 and 2
     else if(whole == 1)
     {
-        output = output + (bias * pow(2,36));
+        output = output + (bias * pow(2,36));//sets the 11bit exponent to 1023
+
+        //calculates the value of the decimal
         for(int i = 36; i > 0; i--)
         {
             if(dec * 2 < pow(10,digits))
@@ -699,9 +708,11 @@ long genFloat(char* input)
         }
         output = output + sum;
     }
+
+        //calculates output for numbers that have an absolute value between 0 and 1
     else if(whole == 0)
     {
-        for(int i = 36; i > 0; i--)//sets count
+        for(int i = 36; i > 0; i--)//sets count which is the exponent
         {
             count = count + 1;
             if(dec * 2 < pow(10,digits))
@@ -719,9 +730,10 @@ long genFloat(char* input)
                 break;
             }
         }
-        printf("count = %d\n",count);
         output = output + ((bias - count) * pow(2,36));//adds 11bit exponent into the output
         dec = deci;
+
+        //calculates the decimal number
         for(int i = 36; i > 0; i--)
         {
             if(dec * 2 < pow(10,digits))
@@ -741,38 +753,37 @@ long genFloat(char* input)
                 dec = 0;
                 sum = sum + pow(2,i-1);
                 output = output + 34359738368;
-                printf("%ld", output);
                 return output;
             }
         }
-        printf("%ld\n",sum);
-        sum = sum - pow(2,36 - count);
-        sum = sum * pow(2,count);
-    }
-    for(int i = count ; i > 0; i--)
-    {
-        if(dec * 2 < pow(10,digits))
-        {
+        sum = sum - pow(2,36 - count);//sets the first bit that is a one to a zero
+        sum = sum * pow(2,count);//shifts the number to the left
 
-            dec = dec * 2;
-            continue;
-        }
-        if(dec * 2 > pow(10,digits))
+        //continues filling in the remaining lower numbers that were not filled in due to the shift
+        for(int i = count ; i > 0; i--)
         {
-            dec = (dec *2) - pow(10,digits);
-            sum = sum + pow(2,i-1);
-            continue;
+            if(dec * 2 < pow(10,digits))
+            {
+                dec = dec * 2;
+                continue;
+            }
+            if(dec * 2 > pow(10,digits))
+            {
+                dec = (dec *2) - pow(10,digits);
+                sum = sum + pow(2,i-1);
+                continue;
+            }
+            if(dec * 2 == pow(10,digits))
+            {
+                dec = 0;
+                sum = sum + pow(2,i-1);
+                output = output + 34359738368;
+                return output;
+            }
         }
-        if(dec * 2 == pow(10,digits))
-        {
-            dec = 0;
-            sum = sum + pow(2,i-1);
-            output = output + 34359738368;
-            printf("%ld", output);
-            return output;
-        }
+        output = output + sum;
     }
-    output = output + sum;
+
     return output;
 }
 
