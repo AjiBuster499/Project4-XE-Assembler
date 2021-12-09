@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/Project4_XE_Assembler.dir/main.c.o CMakeFiles/Project4_XE_Assembler.dir/symbols.c.o  -o Project4_XE_Assembler  -lm 

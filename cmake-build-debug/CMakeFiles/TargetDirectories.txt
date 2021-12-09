@@ -1,0 +1,3 @@
+/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/CMakeFiles/edit_cache.dir
+/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/CMakeFiles/Project4_XE_Assembler.dir

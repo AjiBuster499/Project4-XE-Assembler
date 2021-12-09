@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="Project4_XE_Assembler"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Project4_XE_Assembler">
+				<Option output="/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Project4_XE_Assembler" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/."/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/9/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 Project4_XE_Assembler"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Project4_XE_Assembler/fast">
+				<Option output="/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Project4_XE_Assembler" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/."/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/9/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 Project4_XE_Assembler/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/headers.h">
+			<Option target="Project4_XE_Assembler"/>
+		</Unit>
+		<Unit filename="/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/main.c">
+			<Option target="Project4_XE_Assembler"/>
+		</Unit>
+		<Unit filename="/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/symbols.c">
+			<Option target="Project4_XE_Assembler"/>
+		</Unit>
+		<Unit filename="/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

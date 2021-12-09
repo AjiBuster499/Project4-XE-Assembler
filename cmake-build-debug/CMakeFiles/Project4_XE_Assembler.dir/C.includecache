@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/headers.h
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+stdbool.h
+-
+math.h
+-
+
+/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/main.c
+headers.h
+/mnt/c/Users/mars5/CLionProjects/Project4-XE-Assembler/headers.h
+

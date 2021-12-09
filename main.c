@@ -915,11 +915,11 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
       if ((strchr(second, '.') != NULL)) //float
       {
           word = genFloat(second);
-          sprintf(finalstring, "T%06X06%012X", curr, word);
+          sprintf(finalstring, "T%06X06%012lX", curr, word);
       }
       else {
           word = atoi(second);
-          sprintf(finalstring, "T%06X03%06X", curr, word);
+          sprintf(finalstring, "T%06X03%06lX", curr, word);
       }
     strcpy(trec[trcount], finalstring);
     trcount++;
