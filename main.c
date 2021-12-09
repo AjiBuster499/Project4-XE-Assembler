@@ -224,8 +224,9 @@ int main( int argc, char* argv[]) {
         }
       
         if (strcmp("END", newdir) == 0) {
-          tempsym = symbolReturn(symTab, tok3);
-        
+            if(tok3 != NULL) {
+                tempsym = symbolReturn(symTab, tok3);
+            }
           if(tempsym == NULL &&
              tok3 != NULL) {
             printLine(lclone);
@@ -233,8 +234,12 @@ int main( int argc, char* argv[]) {
             fclose(fp);
             return 0;
           }
-    
-          sprintf(end, "E00%06X", tempsym->address);
+          if(tok3 != NULL) {
+              sprintf(end, "E00%06X", tempsym->address);
+          }
+          else{
+              sprintf(end, "E00%06X", init.address);
+          }
           linecount2++;
           continue;
         }
@@ -532,16 +537,26 @@ int addCtr(struct syminst tab[], char* symbol, char* tok3, unsigned int* ctr, ch
       return 0;
     }
   } else if (strcmp("WORD", symbol) == 0) {
-    temp = strtol(tok3, NULL, 10);
-    if ((*ctr +(3) <= 0x10000) &&
-       ((temp <= 8388608) && (temp >= -8388608))) {
-      *ctr += 3;
-      return 1;
-    } else {
-      printLine(line);
-      printf("Line %d ERROR: Word being stored is larger than SIC max! Maximum size for SIC is 8388608 in either direction!\n", srcline);
-      return 0;
-    }
+
+      if ((strchr(tok3, '.') != NULL)) //float
+      {
+          if ((*ctr + (6) <= 0x10000) &&
+              ((temp <= 8388608) && (temp >= -8388608))) {
+              *ctr += 6;
+              return 1;
+          }
+          temp = strtol(tok3, NULL, 10);
+          } if ((*ctr + (3) <= 0x10000) &&
+              ((temp <= 8388608) && (temp >= -8388608))) {
+              *ctr += 3;
+              return 1;
+          } else {
+              printLine(line);
+              printf("Line %d ERROR: Word being stored is larger than SIC max! Maximum size for SIC is 8388608 in either direction!\n",
+                     srcline);
+              return 0;
+          }
+
 
   }
   else if (strcmp("BASE", symbol) == 0)
@@ -582,6 +597,185 @@ void printTable(struct symbol* tab[]) {
 /*
  * prints the line
  */
+long genFloat(char* input)
+{
+    int whole;
+    int dec;
+    int deci;
+    int digits = 1;
+
+    int count = 0;
+    int divisor =1;
+    long sum = 0;
+
+    int bias = 1023;
+    int exponent;
+
+
+    long output = 0;
+
+    sscanf(input, "%d.%d", &whole, &deci);
+    printf("%d\n", whole);
+    printf("%d\n", deci);
+    dec = deci;
+
+    if(whole == 0 && deci == 0)
+    {
+        printf("output = 0\n");
+        return 0;
+    }
+    if (dec >= 10)
+    {
+        do
+        {
+            dec = dec - (dec * pow(10,digits));
+            ++digits;
+        }while(dec > 0);
+    }
+    printf("digits = %d\n",digits);
+    dec = deci;
+    if(whole < 0)
+    {
+        output = output + 140737488355328;
+        whole = whole * -1;
+    }
+    if(whole >= 1)
+    {
+
+        while(whole >= divisor)
+        {
+            count = count + 1;
+            divisor = divisor * 2;
+
+        }
+        printf("%d\n",count);
+        exponent = bias + (count - 1);
+        output = output + (exponent * pow(2,36));
+        output = output + ((whole - pow(2,count-1)) * pow(2, 36-(count-1)));
+        for(int i = 36-(count-1); i > 0; i--)
+        {
+            if(dec * 2 < pow(10,digits))
+            {
+                dec = dec * 2;
+                continue;
+            }
+            if(dec * 2 > pow(10,digits))
+            {
+                dec = (dec *2) - pow(10,digits);
+                sum = sum + pow(2,i-1);
+                continue;
+            }
+            if(dec * 2 == pow(10,digits))
+            {
+                sum = sum + pow(2,i-1);
+                break;
+            }
+
+        }
+        printf("%ld\n",sum);
+        output = output + sum;
+    }
+    else if(whole == 1)
+    {
+        output = output + (bias * pow(2,36));
+        for(int i = 36; i > 0; i--)
+        {
+            if(dec * 2 < pow(10,digits))
+            {
+                dec = dec * 2;
+                continue;
+            }
+            if(dec * 2 > pow(10,digits))
+            {
+                dec = (dec *2) - pow(10,digits);
+                sum = sum + pow(2,i-1);
+                continue;
+            }
+            if(dec * 2 == pow(10,digits))
+            {
+                sum = sum + pow(2,i-1);
+                break;
+            }
+        }
+        output = output + sum;
+    }
+    else if(whole == 0)
+    {
+        for(int i = 36; i > 0; i--)//sets count
+        {
+            count = count + 1;
+            if(dec * 2 < pow(10,digits))
+            {
+                dec = dec * 2;
+                continue;
+            }
+            if(dec * 2 > pow(10,digits))
+            {
+                break;
+            }
+            if(dec * 2 == pow(10,digits))
+            {
+
+                break;
+            }
+        }
+        printf("count = %d\n",count);
+        output = output + ((bias - count) * pow(2,36));//adds 11bit exponent into the output
+        dec = deci;
+        for(int i = 36; i > 0; i--)
+        {
+            if(dec * 2 < pow(10,digits))
+            {
+
+                dec = dec * 2;
+                continue;
+            }
+            if(dec * 2 > pow(10,digits))
+            {
+                dec = (dec *2) - pow(10,digits);
+                sum = sum + pow(2,i-1);
+                continue;
+            }
+            if(dec * 2 == pow(10,digits))
+            {
+                dec = 0;
+                sum = sum + pow(2,i-1);
+                output = output + 34359738368;
+                printf("%ld", output);
+                return output;
+            }
+        }
+        printf("%ld\n",sum);
+        sum = sum - pow(2,36 - count);
+        sum = sum * pow(2,count);
+    }
+    for(int i = count ; i > 0; i--)
+    {
+        if(dec * 2 < pow(10,digits))
+        {
+
+            dec = dec * 2;
+            continue;
+        }
+        if(dec * 2 > pow(10,digits))
+        {
+            dec = (dec *2) - pow(10,digits);
+            sum = sum + pow(2,i-1);
+            continue;
+        }
+        if(dec * 2 == pow(10,digits))
+        {
+            dec = 0;
+            sum = sum + pow(2,i-1);
+            output = output + 34359738368;
+            printf("%ld", output);
+            return output;
+        }
+    }
+    output = output + sum;
+    return output;
+}
+
 void printLine(char* line) {
   printf("%s", line);
 }
@@ -624,7 +818,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
                  char trec[][71], char mrec[][71], struct syminst inst[], struct countertrack* tracker[])
 {
   unsigned int hextemp = 0;
-  int word = 0;
+  long word = 0;
   int opcode = 0;
 
   struct symbol* temp;
@@ -718,8 +912,15 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
     }
   }
   if(strcmp(first, "WORD") == 0) {
-    word = atoi(second);
-    sprintf(finalstring, "T %06X03%06X", curr, word);
+      if ((strchr(second, '.') != NULL)) //float
+      {
+          word = genFloat(second);
+          sprintf(finalstring, "T%06X06%012X", curr, word);
+      }
+      else {
+          word = atoi(second);
+          sprintf(finalstring, "T%06X03%06X", curr, word);
+      }
     strcpy(trec[trcount], finalstring);
     trcount++;
     return 1;
@@ -734,7 +935,7 @@ int generateTrec(char* first, char* second, struct symbol* tab[], unsigned int l
   if((strcmp(first, "FIX") == 0)|| (strcmp(first, "FLOAT") == 0) || (strcmp(first, "HIO") == 0) || (strcmp(first, "NORM") == 0) ||
           (strcmp(first, "SIO") == 0) || (strcmp(first, "TIO") == 0) )
     {
-        sprintf(finalstring,"T %06X 01 %02X", curr, opcode);
+        sprintf(finalstring,"T%06X01%02X", curr, opcode);
         strcpy(trec[trcount], finalstring);
         trcount++;
     }
