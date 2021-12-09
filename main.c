@@ -419,7 +419,7 @@ int instructionExists(struct syminst insttab[], char *sname) {
 int findNextValid(struct countertrack* tab[], int line)
 {
     line += 1;
-    for(line; line < 1024 ; line++)
+    for(int i = line; line < 1024 ; line++)
     {
         if(tab[line]->valid == true)
         {
@@ -1336,7 +1336,8 @@ char* generateMrec(int ctr) {
 char findChar(char* str)
 {
     int count = 0;
-    while (count <= strlen(str)) {
+    int len = strlen(str);
+    while (count <= len) {
         if(str[count] == ' ' || str[count] == '\t')
         {
             count++;
@@ -1346,6 +1347,7 @@ char findChar(char* str)
             return str[count];
         }
     }
+    return '\0';
 }
 int createFile(FILE* fp, char trec[][71], char mrec[][71], char* header, char* end) {
   fprintf(fp, "%s\n", header);
