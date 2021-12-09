@@ -49,13 +49,13 @@ int main( int argc, char* argv[]) {
 		return 0;
   }
 
-  char fileName[] = "";
-  strcpy(fileName, argv[1]);
-  if (strstr(fileName, ".sic") == NULL ||
-      strstr(fileName, ".sicxe") == NULL) {
-        printf("ERROR: File is not a SIC or SICXE assembly file!\n");
-        return 0;
-  }
+  // char fileName[] = "";
+  // strcpy(fileName, argv[1]);
+  // if (strstr(fileName, ".sic") == NULL ||
+  //     strstr(fileName, ".sicxe") == NULL) {
+  //       printf("ERROR: File is not a SIC or SICXE assembly file!\n");
+  //       return 0;
+  // }
 	fp = fopen( argv[1], "r");
 	if (fp == NULL ) {
 	  printf("ERROR: %s could not be opened for reading,\n", argv[1] );
